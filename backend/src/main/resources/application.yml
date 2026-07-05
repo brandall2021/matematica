@@ -1,0 +1,162 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: matematica
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/matematica
+    username: ${DB_USERNAME:matematica}
+    password: ${DB_PASSWORD:matematica}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-4o
+          temperature: 0.3
+    ollama:
+      base-url: ${OLLAMA_URL:http://localhost:11434}
+      chat:
+        options:
+          model: llama3.1
+          temperature: 0.3
+    vectorstore:
+      qdrant:
+        host: ${QDRANT_HOST:localhost}
+        port: 6334
+        collection-name: matematica_chunks
+    embedding:
+      type: ${EMBEDDING_TYPE:openai}
+      openai:
+        model: text-embedding-3-small
+      ollama:
+        model: nomic-embed-text
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:base64SecretKeyForDevelopmentChangeInProduction}
+    expiration-ms: 3600000
+    refresh-expiration-ms: 604800000
+
+  math:
+    engine: symja
+    timeout-seconds: 30
+
+  rag:
+    chunk-size: 512
+    chunk-overlap: 64
+    top-k: 10
+    similarity-threshold: 0.75
+    hybrid-search: true
+    rerank-enabled: true
+
+  indexing:
+    max-parallel-docs: 4
+    queue-capacity: 100
+    youtube:
+      enabled: true
+      max-transcript-length: 50000
+
+  audit:
+    enabled: true
+    log-body: true
+
+  cors:
+    allowed-origins: http://localhost:4200
+
+logging:
+  level:
+    com.matematica: DEBUG
+    org.springframework.ai: INFO
+    org.springframework.security: INFO
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/matematica.log
+    max-size: 10MB
+    max-history: 7
+
+springdoc:
+  api-docs:
+    path: /api/docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+logging:
+  level:
+    com.matematica: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+logging:
+  level:
+    com.matematica: WARN

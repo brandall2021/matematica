@@ -1,0 +1,25 @@
+# Backend
+backend/target/
+backend/logs/
+*.class
+*.jar
+*.war
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Environment
+.env
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

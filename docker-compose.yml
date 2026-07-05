@@ -1,0 +1,114 @@
+name: matematica
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: matematica-postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_NAME:-matematica}
+      POSTGRES_USER: ${DB_USER:-matematica}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-matematica}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-matematica} -d ${DB_NAME:-matematica}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - matematica-net
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.0
+    container_name: matematica-qdrant
+    restart: always
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - matematica-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: matematica-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_USERNAME: ${DB_USER:-matematica}
+      DB_PASSWORD: ${DB_PASSWORD:-matematica}
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-matematica}
+      QDRANT_HOST: qdrant
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      JWT_SECRET: ${JWT_SECRET:-}
+      EMBEDDING_TYPE: ${EMBEDDING_TYPE:-openai}
+    volumes:
+      - ${BACKEND_LOGS:-./logs}:/app/logs
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - matematica-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: matematica-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - matematica-net
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: matematica-ollama
+    restart: always
+    profiles:
+      - ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - matematica-net
+
+volumes:
+  postgres_data:
+    name: matematica-postgres-data
+  qdrant_data:
+    name: matematica-qdrant-data
+  ollama_data:
+    name: matematica-ollama-data
+
+networks:
+  matematica-net:
+    name: matematica-network
+    driver: bridge
