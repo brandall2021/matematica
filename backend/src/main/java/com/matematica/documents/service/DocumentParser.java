@@ -39,8 +39,8 @@ public class DocumentParser {
         var parser = new PDFParser();
         parser.parse(input, handler, metadata, new ParseContext());
 
-        String author = metadata.get(Metadata.AUTHOR);
-        String title = metadata.get(Metadata.TITLE);
+        String author = metadata.get("dc:creator");
+        String title = metadata.get("dc:title");
         String pageCountStr = metadata.get("xmpTPg:NPages");
         Integer pageCount = pageCountStr != null ? Integer.parseInt(pageCountStr) : null;
 
@@ -53,8 +53,8 @@ public class DocumentParser {
         var parser = new AutoDetectParser();
         parser.parse(input, handler, metadata, new ParseContext());
 
-        String author = metadata.get(Metadata.AUTHOR);
-        String title = metadata.get(Metadata.TITLE);
+        String author = metadata.get("dc:creator");
+        String title = metadata.get("dc:title");
 
         return new ParsedDocument(handler.toString(), author, title, null);
     }

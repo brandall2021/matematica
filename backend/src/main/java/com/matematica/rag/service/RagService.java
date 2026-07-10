@@ -46,11 +46,9 @@ public class RagService {
 
     public RagQueryResponse query(RagQueryRequest request) {
         try {
-            SearchRequest searchRequest = SearchRequest.builder()
-                    .query(request.query())
-                    .topK(topK)
-                    .similarityThreshold(similarityThreshold)
-                    .build();
+            SearchRequest searchRequest = SearchRequest.query(request.query())
+                    .withTopK(topK)
+                    .withSimilarityThreshold(similarityThreshold);
 
             List<Document> results = vectorStore.similaritySearch(searchRequest);
 
@@ -69,7 +67,7 @@ public class RagService {
             var response = chatModel.call(systemMsg, userMsg);
 
             return new RagQueryResponse(
-                    response.getResult().getOutput().getContent(),
+                    response,
                     sources,
                     results.size()
             );

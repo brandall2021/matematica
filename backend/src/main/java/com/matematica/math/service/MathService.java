@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class MathService {
 
-    private final ExprEvaluator evaluator = new ExprEvaluator(false, 10);
+    private final ExprEvaluator evaluator = new ExprEvaluator(false, (short) 10);
 
     public MathResponse evaluate(MathRequest request) {
         try {
@@ -62,7 +62,7 @@ public class MathService {
             xValues[i] = min + i * step;
             try {
                 IExpr result = evaluator.evaluate(expression.replace(v, "(" + xValues[i] + ")"));
-                yValues[i] = result.isSignedNumber() ? ((org.matheclipse.core.interfaces.ISignedNumber) result).doubleValue() : Double.NaN;
+                yValues[i] = result.isReal() ? ((org.matheclipse.core.interfaces.IReal) result).doubleValue() : Double.NaN;
             } catch (Exception e) {
                 yValues[i] = Double.NaN;
             }

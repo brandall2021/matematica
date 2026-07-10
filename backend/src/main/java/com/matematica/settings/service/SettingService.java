@@ -41,4 +41,8 @@ public class SettingService {
         setting = settingRepository.save(setting);
         return toResponse(setting);
     }
+
+    private SettingResponse toResponse(AppSetting s) {
+        return new SettingResponse(s.getId(), s.getKey(), s.getValue(), s.getDescription(), s.getUpdatedAt());
+    }
 }

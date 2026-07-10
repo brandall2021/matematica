@@ -129,12 +129,7 @@
             <version>3.0.0</version>
         </dependency>
 
-        <!-- YouTube Transcription -->
-        <dependency>
-            <groupId>com.github.wizjery</groupId>
-            <artifactId>youtube-transcript-api</artifactId>
-            <version>1.2.1</version>
-        </dependency>
+
 
         <!-- Utils -->
         <dependency>
