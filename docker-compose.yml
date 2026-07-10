@@ -83,10 +83,16 @@ services:
     restart: always
     depends_on:
       - backend
-    ports:
-      - "3003:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`sistemas-matematica-6ubzi2-f19714-200-58-102-223.sslip.io`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
     networks:
       - matematica-net
+      - dokploy-network
 
   ollama:
     image: ollama/ollama:latest
@@ -113,3 +119,6 @@ networks:
   matematica-net:
     name: matematica-network
     driver: bridge
+  dokploy-network:
+    external: true
+    name: dokploy-network
