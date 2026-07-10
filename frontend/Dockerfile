@@ -8,6 +8,7 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 
 ARG CONFIGURATION=production
+ARG CACHEBUST=1
 RUN npm run build -- --configuration=$CONFIGURATION
 
 FROM nginx:1.27-alpine
