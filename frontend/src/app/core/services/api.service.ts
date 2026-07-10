@@ -10,8 +10,11 @@ export interface ChatRequest { sessionId?: string; message: string; }
 export interface ChatResponse { messageId: string; sessionId: string; answer: string; sources: string; timestamp: string; }
 export interface ChatSessionResponse { id: string; title: string; messageCount: number; createdAt: string; updatedAt: string; }
 
-export interface MathRequest { operation: string; expression: string; variable?: string; point?: string; }
+export interface MathRequest { operation: string; expression: string; variable?: string; point?: string; xMin?: number; xMax?: number; }
 export interface MathResponse { success: boolean; result: string; error: string; }
+
+export interface PlotRequest { expression: string; variable?: string; xMin?: number; xMax?: number; }
+export interface PlotResponse { xValues: number[]; yValues: number[]; expression: string; latexExpression: string; }
 
 export interface DocumentResponse { id: string; filename: string; type: string; mimeType: string; size: number; author: string; title: string; subject: string; unit: string; topic: string; source: string; sourceUrl: string; pageCount: number; tags: string; chunkCount: number; indexed: boolean; errorMessage: string; createdAt: string; }
 
@@ -42,6 +45,10 @@ export class ApiService {
   // Math
   evaluateMath(req: MathRequest): Observable<MathResponse> {
     return this.http.post<MathResponse>(`${environment.apiUrl}/math/evaluate`, req);
+  }
+
+  plotMath(req: PlotRequest): Observable<PlotResponse> {
+    return this.http.post<PlotResponse>(`${environment.apiUrl}/math/plot`, req);
   }
 
   // Documents
