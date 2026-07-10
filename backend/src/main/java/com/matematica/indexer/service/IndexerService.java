@@ -4,7 +4,6 @@ import com.matematica.documents.domain.Document;
 import com.matematica.documents.repository.DocumentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.document.Document as AiDocument;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,9 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -44,11 +41,11 @@ public class IndexerService {
                 return;
             }
 
-            List<AiDocument> chunks = textSplitter.split(text, chunkSize, chunkOverlap);
+            List<org.springframework.ai.document.Document> chunks = textSplitter.split(text, chunkSize, chunkOverlap);
 
-            List<AiDocument> aiDocs = new ArrayList<>();
+            List<org.springframework.ai.document.Document> aiDocs = new ArrayList<>();
             for (int i = 0; i < chunks.size(); i++) {
-                AiDocument chunk = new AiDocument(chunks.get(i).getContent());
+                org.springframework.ai.document.Document chunk = new org.springframework.ai.document.Document(chunks.get(i).getContent());
                 chunk.getMetadata().put("documentId", document.getId().toString());
                 chunk.getMetadata().put("chunkIndex", i);
                 chunk.getMetadata().put("filename", document.getFilename());

@@ -1,14 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatGridListModule } from '@angular/material/grid-list';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService, AdminStats } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatGridListModule],
+  imports: [CommonModule, MatCardModule, MatIconModule],
   template: `
     <div class="dashboard">
       <h2>Dashboard</h2>
@@ -34,6 +34,7 @@ import { ApiService, AdminStats } from '../../core/services/api.service';
   `]
 })
 export class DashboardComponent {
+  private snackBar = inject(MatSnackBar);
   statCards: any[] = [];
 
   constructor(private api: ApiService) {
@@ -45,6 +46,9 @@ export class DashboardComponent {
           { icon: 'chat', label: 'Consultas Hoy', value: stats.dailyQueries },
           { icon: 'speed', label: 'Tiempo Prom. (s)', value: stats.avgResponseTime.toFixed(2) },
         ];
+      },
+      error: () => {
+        this.snackBar.open('Error al cargar estadísticas', 'Cerrar', { duration: 3000 });
       }
     });
   }

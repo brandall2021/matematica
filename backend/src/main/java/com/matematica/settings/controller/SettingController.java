@@ -21,11 +21,13 @@ public class SettingController {
     private final SettingService settingService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<List<SettingResponse>> getAll() {
         return ResponseEntity.ok(settingService.getAll());
     }
 
     @GetMapping("/{key}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<SettingResponse> getByKey(@PathVariable String key) {
         return ResponseEntity.ok(settingService.getByKey(key));
     }

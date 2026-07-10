@@ -4,6 +4,7 @@ import com.matematica.documents.domain.Document;
 import com.matematica.documents.domain.DocumentType;
 import com.matematica.documents.dto.*;
 import com.matematica.documents.repository.DocumentRepository;
+import com.matematica.indexer.service.IndexerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final DocumentParser documentParser;
+    private final IndexerService indexerService;
 
     @Transactional
     public DocumentUploadResponse uploadDocument(MultipartFile file, String subject, String unit,
@@ -29,7 +31,7 @@ public class DocumentService {
             String filename = file.getOriginalFilename();
             DocumentType type = detectType(filename);
 
-            var parsed = documentParser.parse(file);
+            var parsed = documentParser.parse(file, type);
             String cleanedText = parsed.text().replaceAll("\\s+", " ").trim();
 
             var document = Document.builder()
@@ -50,9 +52,11 @@ public class DocumentService {
 
             document = documentRepository.save(document);
 
+            indexerService.indexDocument(document);
+
             return new DocumentUploadResponse(
                     document.getId(), document.getFilename(),
-                    "PENDING_INDEXING", "Document uploaded successfully"
+                    "INDEXING", "Document uploaded successfully"
             );
         } catch (Exception e) {
             log.error("Error uploading document", e);
@@ -79,7 +83,7 @@ public class DocumentService {
 
         return new DocumentUploadResponse(
                 document.getId(), document.getFilename(),
-                "PENDING_INDEXING", "YouTube video added for processing"
+                "INDEXING", "YouTube video added for processing"
         );
     }
 

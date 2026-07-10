@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSidenavModule, MatDrawer } from '@angular/material/sidenav';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 
@@ -14,7 +15,7 @@ import { AuthService } from './core/services/auth.service';
   imports: [
     CommonModule, RouterOutlet, RouterLink, RouterLinkActive,
     MatToolbarModule, MatSidenavModule, MatButtonModule,
-    MatIconModule, MatListModule
+    MatIconModule, MatListModule, MatTooltipModule
   ],
   template: `
     <mat-toolbar color="primary">
@@ -32,7 +33,7 @@ import { AuthService } from './core/services/auth.service';
     </mat-toolbar>
 
     <mat-drawer-container *ngIf="auth.isLoggedIn()">
-      <mat-drawer #drawer mode="side" opened>
+      <mat-drawer mode="side" opened>
         <mat-nav-list>
           <a mat-list-item routerLink="/chat" routerLinkActive="active-link">
             <mat-icon matListItemIcon>chat</mat-icon>
@@ -84,5 +85,6 @@ import { AuthService } from './core/services/auth.service';
   `]
 })
 export class AppComponent {
+  @ViewChild('drawer') drawer!: MatDrawer;
   constructor(public auth: AuthService) {}
 }

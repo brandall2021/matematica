@@ -38,7 +38,14 @@ public class ChatController {
     }
 
     @GetMapping("/sessions/{sessionId}/messages")
-    public ResponseEntity<List<ChatMessage>> getMessages(@PathVariable UUID sessionId) {
-        return ResponseEntity.ok(chatService.getMessages(sessionId));
+    public ResponseEntity<List<ChatMessage>> getMessages(
+            @PathVariable UUID sessionId,
+            Authentication auth) {
+        UUID userId = UUID.fromString(auth.getName());
+        var messages = chatService.getMessages(sessionId);
+        if (!messages.isEmpty() && !messages.getFirst().getUserId().equals(userId)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(messages);
     }
 }

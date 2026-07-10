@@ -48,12 +48,12 @@ public class AuthService {
         return buildAuthResponse(user);
     }
 
-    public AuthResponse refresh(RefreshTokenRequest request) {
-        String userId = jwtService.extractUserId(request.refreshToken());
+    public AuthResponse refresh(String refreshToken) {
+        String userId = jwtService.extractUserId(refreshToken);
         var user = userRepository.findById(java.util.UUID.fromString(userId))
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (!jwtService.isTokenValid(request.refreshToken())) {
+        if (!jwtService.isTokenValid(refreshToken)) {
             throw new IllegalArgumentException("Invalid refresh token");
         }
 

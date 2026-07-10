@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/services/api.service';
+import * as katex from 'katex';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -41,7 +42,7 @@ interface Message {
           <div *ngFor="let msg of messages()" class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
             <div class="message-content">
               <strong>{{ msg.role === 'user' ? 'Tú' : 'Tutor' }}</strong>
-              <div [innerHTML]="msg.content"></div>
+              <div [innerHTML]="renderContent(msg.content)"></div>
               <div class="sources" *ngIf="msg.sources">
                 <strong>Fuentes:</strong><br>
                 <span [innerHTML]="msg.sources"></span>
@@ -121,6 +122,18 @@ export class ChatComponent implements AfterViewChecked {
   askExample(text: string): void {
     this.inputMessage = text;
     this.sendMessage();
+  }
+
+  renderContent(content: string): string {
+    return content.replace(/\$\$(.+?)\$\$/gs, (_, expr) => {
+      try {
+        return katex.renderToString(expr, { displayMode: true });
+      } catch { return expr; }
+    }).replace(/\$(.+?)\$/g, (_, expr) => {
+      try {
+        return katex.renderToString(expr, { displayMode: false });
+      } catch { return expr; }
+    });
   }
 
   private scrollToBottom(): void {

@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
@@ -22,6 +22,8 @@ interface User {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private http = inject(HttpClient);
+  private router = inject(Router);
   private currentUserSignal = signal<User | null>(null);
   private tokenSignal = signal<string | null>(null);
 
@@ -29,10 +31,7 @@ export class AuthService {
   isLoggedIn = computed(() => this.currentUserSignal() !== null);
   role = computed(() => this.currentUserSignal()?.role ?? '');
 
-  constructor(
-    private http: HttpClient,
-    private router: Router
-  ) {
+  constructor() {
     this.loadFromStorage();
   }
 
@@ -62,6 +61,35 @@ export class AuthService {
 
   hasRole(...roles: string[]): boolean {
     return roles.includes(this.role());
+  }
+
+  refreshToken(): Observable<AuthResponse | null> {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      this.logout();
+      return new Observable(sub => { sub.next(null); sub.complete(); });
+    }
+    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/refresh`, { refreshToken })
+      .pipe(tap({
+        next: (res) => this.handleAuth(res),
+        error: () => this.logout()
+      }));
+  }
+
+  refreshTokenSync(): boolean {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return false;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${environment.apiUrl}/auth/refresh`, false);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({ refreshToken }));
+    if (xhr.status === 200) {
+      const res = JSON.parse(xhr.responseText) as AuthResponse;
+      this.handleAuth(res);
+      return true;
+    }
+    return false;
   }
 
   private handleAuth(res: AuthResponse): void {

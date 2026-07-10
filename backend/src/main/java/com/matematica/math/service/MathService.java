@@ -62,7 +62,7 @@ public class MathService {
             xValues[i] = min + i * step;
             try {
                 IExpr result = evaluator.evaluate(expression.replace(v, "(" + xValues[i] + ")"));
-                yValues[i] = result.isNumber() ? result.re().evalDouble() : Double.NaN;
+                yValues[i] = result.isSignedNumber() ? ((org.matheclipse.core.interfaces.ISignedNumber) result).doubleValue() : Double.NaN;
             } catch (Exception e) {
                 yValues[i] = Double.NaN;
             }

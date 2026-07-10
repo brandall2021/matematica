@@ -1,24 +1,19 @@
 package com.matematica.rag.service;
 
-import com.matematica.documents.domain.Document;
-import com.matematica.documents.repository.DocumentRepository;
 import com.matematica.rag.dto.RagQueryRequest;
 import com.matematica.rag.dto.RagQueryResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.document.Document as AiDocument;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,7 +23,6 @@ public class RagService {
 
     private final VectorStore vectorStore;
     private final ChatModel chatModel;
-    private final DocumentRepository documentRepository;
 
     @Value("${app.rag.top-k:10}")
     private int topK;
@@ -58,7 +52,7 @@ public class RagService {
                     .similarityThreshold(similarityThreshold)
                     .build();
 
-            List<AiDocument> results = vectorStore.similaritySearch(searchRequest);
+            List<Document> results = vectorStore.similaritySearch(searchRequest);
 
             String context = results.stream()
                     .map(doc -> formatContext(doc))
@@ -89,7 +83,7 @@ public class RagService {
         }
     }
 
-    private String formatContext(AiDocument doc) {
+    private String formatContext(Document doc) {
         var meta = doc.getMetadata();
         return String.format("[%s] %s\n%s",
                 meta.getOrDefault("type", "Desconocido"),
@@ -97,7 +91,7 @@ public class RagService {
                 doc.getContent());
     }
 
-    private String formatSource(AiDocument doc) {
+    private String formatSource(Document doc) {
         var meta = doc.getMetadata();
         String type = (String) meta.getOrDefault("type", "Documento");
         String title = (String) meta.getOrDefault("title", "Sin título");

@@ -1,14 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatCardModule, MatButtonModule, MatIconModule, MatSnackBarModule],
   template: `
     <div class="admin-container">
       <mat-card>
@@ -18,8 +20,8 @@ import { ApiService } from '../../core/services/api.service';
         </mat-card-header>
         <mat-card-content>
           <div class="actions">
-            <button mat-raised-button color="primary" (click)="reindex()">
-              <mat-icon>refresh</mat-icon> Reindexar Todos los Documentos
+            <button mat-raised-button color="primary" (click)="reindex()" [disabled]="loading()">
+              <mat-icon>refresh</mat-icon> {{ loading() ? 'Reindexando...' : 'Reindexar Todos los Documentos' }}
             </button>
           </div>
         </mat-card-content>
@@ -32,9 +34,22 @@ import { ApiService } from '../../core/services/api.service';
   `]
 })
 export class AdminComponent {
+  private snackBar = inject(MatSnackBar);
+  loading = signal(false);
+
   constructor(private api: ApiService) {}
 
   reindex(): void {
-    this.api.reindexAll().subscribe();
+    this.loading.set(true);
+    this.api.reindexAll().subscribe({
+      next: () => {
+        this.snackBar.open('Reindexación iniciada correctamente', 'Cerrar', { duration: 3000 });
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.snackBar.open('Error al reindexar: ' + err.message, 'Cerrar', { duration: 5000 });
+        this.loading.set(false);
+      }
+    });
   }
 }
