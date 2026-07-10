@@ -6,5 +6,7 @@ public record MathRequest(
     @NotBlank String operation,
     @NotBlank String expression,
     String variable,
-    String point
+    String point,
+    Double xMin,
+    Double xMax
 ) {}
