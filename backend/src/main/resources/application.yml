@@ -6,7 +6,7 @@ spring:
     name: matematica
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/matematica
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/matematica}
     username: ${DB_USERNAME:matematica}
     password: ${DB_PASSWORD:matematica}
     driver-class-name: org.postgresql.Driver
