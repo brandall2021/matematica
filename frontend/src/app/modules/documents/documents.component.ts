@@ -20,7 +20,7 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="documents-container">
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Gestión Documental</mat-card-title>
+          <mat-card-title>Gestion Documental</mat-card-title>
           <mat-card-subtitle>Sube y administra el material de estudio</mat-card-subtitle>
         </mat-card-header>
 
@@ -68,34 +68,36 @@ import { AuthService } from '../../core/services/auth.service';
 
             <mat-tab label="Documentos">
               <div class="tab-content">
-                <table mat-table [dataSource]="documents()" class="full-width">
-                  <ng-container matColumnDef="filename">
-                    <th mat-header-cell *matHeaderCellDef>Archivo</th>
-                    <td mat-cell *matCellDef="let doc">{{ doc.filename }}</td>
-                  </ng-container>
-                  <ng-container matColumnDef="type">
-                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
-                    <td mat-cell *matCellDef="let doc">{{ doc.type }}</td>
-                  </ng-container>
-                  <ng-container matColumnDef="unit">
-                    <th mat-header-cell *matHeaderCellDef>Unidad</th>
-                    <td mat-cell *matCellDef="let doc">{{ doc.unit || '-' }}</td>
-                  </ng-container>
-                  <ng-container matColumnDef="indexed">
-                    <th mat-header-cell *matHeaderCellDef>Indexado</th>
-                    <td mat-cell *matCellDef="let doc">{{ doc.indexed ? 'Sí' : 'No' }}</td>
-                  </ng-container>
-                  <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef>Acciones</th>
-                    <td mat-cell *matCellDef="let doc">
-                      <button mat-icon-button color="warn" (click)="deleteDoc(doc.id)" *ngIf="auth.hasRole('ADMIN','TEACHER')">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </td>
-                  </ng-container>
-                  <tr mat-header-row *matHeaderRowDef="columns"></tr>
-                  <tr mat-row *matRowDef="let row; columns: columns;"></tr>
-                </table>
+                <div class="table-wrapper">
+                  <table mat-table [dataSource]="documents()" class="full-width">
+                    <ng-container matColumnDef="filename">
+                      <th mat-header-cell *matHeaderCellDef>Archivo</th>
+                      <td mat-cell *matCellDef="let doc">{{ doc.filename }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="type">
+                      <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                      <td mat-cell *matCellDef="let doc">{{ doc.type }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="unit">
+                      <th mat-header-cell *matHeaderCellDef>Unidad</th>
+                      <td mat-cell *matCellDef="let doc">{{ doc.unit || '-' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="indexed">
+                      <th mat-header-cell *matHeaderCellDef>Indexado</th>
+                      <td mat-cell *matCellDef="let doc">{{ doc.indexed ? 'Si' : 'No' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                      <td mat-cell *matCellDef="let doc">
+                        <button mat-icon-button color="warn" (click)="deleteDoc(doc.id)" *ngIf="auth.hasRole('ADMIN','TEACHER')">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="columns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+                  </table>
+                </div>
               </div>
             </mat-tab>
           </mat-tab-group>
@@ -108,6 +110,12 @@ import { AuthService } from '../../core/services/auth.service';
     .tab-content { padding: 1.5rem 0; display: flex; flex-direction: column; gap: 1rem; }
     .meta-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     table { width: 100%; }
+    .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    @media (max-width: 768px) {
+      .tab-content { padding: 1rem 0; }
+      .meta-fields { grid-template-columns: 1fr; gap: 0.5rem; }
+    }
   `]
 })
 export class DocumentsComponent {

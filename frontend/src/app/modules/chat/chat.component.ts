@@ -25,23 +25,23 @@ interface Message {
       <mat-card class="chat-card">
         <mat-card-header>
           <mat-card-title>Chat con el Tutor</mat-card-title>
-          <mat-card-subtitle>Pregunta cualquier tema de matemática</mat-card-subtitle>
+          <mat-card-subtitle>Pregunta cualquier tema de matematica</mat-card-subtitle>
         </mat-card-header>
 
         <mat-card-content class="messages-container" #scrollContainer>
           <div *ngIf="messages().length === 0" class="empty-state">
-            <mat-icon style="font-size: 48px; width: 48px; height: 48px;">chat</mat-icon>
-            <p>¡Bienvenido! Pregúntame sobre cualquier tema matemático.</p>
+            <mat-icon class="empty-icon">chat</mat-icon>
+            <p>Bienvenido! Preguntame sobre cualquier tema matematico.</p>
             <div class="examples">
-              <button mat-stroked-button (click)="askExample('¿Qué es una derivada?')">¿Qué es una derivada?</button>
-              <button mat-stroked-button (click)="askExample('Resuelve la integral de x^2')">Integral de x²</button>
-              <button mat-stroked-button (click)="askExample('Explica el teorema fundamental del cálculo')">Teorema fundamental</button>
+              <button mat-stroked-button (click)="askExample('Que es una derivada?')">Derivada</button>
+              <button mat-stroked-button (click)="askExample('Resuelve la integral de x^2')">Integral de x2</button>
+              <button mat-stroked-button (click)="askExample('Explica el teorema fundamental del calculo')">Teorema fundamental</button>
             </div>
           </div>
 
           <div *ngFor="let msg of messages()" class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
             <div class="message-content">
-              <strong>{{ msg.role === 'user' ? 'Tú' : 'Tutor' }}</strong>
+              <strong>{{ msg.role === 'user' ? 'Tu' : 'Tutor' }}</strong>
               <div [innerHTML]="renderContent(msg.content)"></div>
               <div class="sources" *ngIf="msg.sources">
                 <strong>Fuentes:</strong><br>
@@ -59,7 +59,7 @@ interface Message {
         </mat-card-content>
 
         <mat-card-actions class="input-area">
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="input-field">
             <mat-label>Escribe tu pregunta...</mat-label>
             <input matInput [(ngModel)]="inputMessage" (keyup.enter)="sendMessage()" [disabled]="loading()">
           </mat-form-field>
@@ -75,13 +75,28 @@ interface Message {
     .chat-card { min-height: calc(100vh - 120px); display: flex; flex-direction: column; }
     .messages-container { flex: 1; overflow-y: auto; padding: 1rem; max-height: calc(100vh - 280px); }
     .empty-state { text-align: center; padding: 3rem 1rem; color: #666; }
+    .empty-icon { font-size: 48px; width: 48px; height: 48px; }
     .examples { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
     .message { margin-bottom: 1rem; display: flex; }
     .message.user { justify-content: flex-end; }
-    .message-content { max-width: 80%; padding: 0.75rem 1rem; border-radius: 12px; }
+    .message-content { max-width: 80%; padding: 0.75rem 1rem; border-radius: 12px; word-break: break-word; }
     .user .message-content { background: #e3f2fd; }
     .assistant .message-content { background: #f5f5f5; }
     .input-area { padding: 1rem; display: flex; gap: 0.5rem; align-items: center; }
+    .input-field { flex: 1; }
+
+    @media (max-width: 768px) {
+      .chat-card { min-height: calc(100vh - 80px); }
+      .messages-container { padding: 0.5rem; max-height: calc(100vh - 200px); }
+      .message-content { max-width: 90%; padding: 0.625rem 0.75rem; font-size: 0.9rem; }
+      .input-area { padding: 0.5rem; gap: 0.25rem; }
+      .examples { flex-direction: column; align-items: center; }
+      .examples button { width: 100%; max-width: 280px; }
+    }
+
+    @media (max-width: 480px) {
+      .message-content { max-width: 95%; }
+    }
   `]
 })
 export class ChatComponent implements AfterViewChecked {
@@ -113,7 +128,7 @@ export class ChatComponent implements AfterViewChecked {
           this.loading.set(false);
         },
         error: () => {
-          this.messages.update(m => [...m, { role: 'assistant', content: 'Lo siento, ocurrió un error. Intenta de nuevo.' }]);
+          this.messages.update(m => [...m, { role: 'assistant', content: 'Lo siento, ocurrio un error. Intenta de nuevo.' }]);
           this.loading.set(false);
         }
       });

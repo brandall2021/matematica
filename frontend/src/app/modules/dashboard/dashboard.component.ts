@@ -31,6 +31,16 @@ import { ApiService, AdminStats } from '../../core/services/api.service';
     .stat-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; }
     .stat-value { font-size: 2rem; font-weight: 700; }
     .stat-label { color: #666; }
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .stat-card { flex-direction: column; text-align: center; gap: 0.5rem; padding: 0.75rem; }
+      .stat-value { font-size: 1.5rem; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
   `]
 })
 export class DashboardComponent {
@@ -48,7 +58,7 @@ export class DashboardComponent {
         ];
       },
       error: () => {
-        this.snackBar.open('Error al cargar estadísticas', 'Cerrar', { duration: 3000 });
+        this.snackBar.open('Error al cargar estadisticas', 'Cerrar', { duration: 3000 });
       }
     });
   }

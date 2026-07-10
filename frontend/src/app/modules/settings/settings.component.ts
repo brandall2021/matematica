@@ -16,8 +16,7 @@ import { ApiService } from '../../core/services/api.service';
     <div class="settings-container">
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Configuración</mat-card-title>
-          <mat-card-subtitle>Ajustes del sistema</mat-card-subtitle>
+          <mat-card-title>Configuracion</mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <mat-list>
@@ -42,6 +41,11 @@ import { ApiService } from '../../core/services/api.service';
     .setting-item { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 1rem; }
     .setting-info { flex: 1; }
     .setting-info p { color: #666; margin: 0; font-size: 0.875rem; }
+
+    @media (max-width: 600px) {
+      .setting-item { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+      .setting-info { text-align: center; }
+    }
   `]
 })
 export class SettingsComponent {

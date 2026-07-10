@@ -34,6 +34,10 @@ import { ApiService } from '../../core/services/api.service';
   styles: [`
     .history-container { max-width: 800px; margin: 0 auto; }
     .empty { text-align: center; color: #666; padding: 2rem; }
+
+    @media (max-width: 480px) {
+      .empty { padding: 1rem; }
+    }
   `]
 })
 export class HistoryComponent {

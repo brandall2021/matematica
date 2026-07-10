@@ -230,7 +230,7 @@ interface Category {
       border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; text-align: center;
     }
     .latex-label { font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.5rem; }
-    .latex-output { font-size: 1.1rem; }
+    .latex-output { font-size: 1.1rem; overflow-x: auto; }
 
     .categories-section { margin-bottom: 1.5rem; }
     .cat-icon { margin-right: 0.5rem; color: #3f51b5; }
@@ -267,6 +267,20 @@ interface Category {
 
     .history-card mat-card-content { padding-top: 0.5rem; }
     .history-chips mat-chip { cursor: pointer; }
+
+    @media (max-width: 768px) {
+      .math-container { gap: 1rem; }
+      .latex-preview { padding: 0.75rem; margin-bottom: 1rem; }
+      .operations-grid button { flex: 1 1 calc(50% - 0.25rem); min-width: 0; font-size: 0.8rem; }
+      .extra-fields, .range-fields { flex-direction: column; gap: 0.5rem; }
+      .extra-fields mat-form-field, .range-fields mat-form-field { min-width: 0; }
+      .result-latex { padding: 0.5rem; font-size: 0.9rem; }
+    }
+
+    @media (max-width: 480px) {
+      .math-container { gap: 0.75rem; }
+      .operations-grid button { flex: 1 1 100%; }
+    }
   `]
 })
 export class MathComponent implements OnInit, AfterViewInit {

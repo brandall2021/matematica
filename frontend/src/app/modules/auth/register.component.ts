@@ -17,7 +17,7 @@ import { CommonModule } from '@angular/common';
       <mat-card class="auth-card">
         <mat-card-header>
           <mat-card-title>Registrarse</mat-card-title>
-          <mat-card-subtitle>Tutor Inteligente de Matemática</mat-card-subtitle>
+          <mat-card-subtitle>Tutor Inteligente de Matematica</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <form #registerForm="ngForm" (ngSubmit)="onSubmit()">
@@ -34,7 +34,7 @@ import { CommonModule } from '@angular/common';
               <input matInput type="email" [(ngModel)]="email" name="email" required email>
             </mat-form-field>
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Contraseña</mat-label>
+              <mat-label>Contrasena</mat-label>
               <input matInput type="password" [(ngModel)]="password" name="password" required minlength="6">
             </mat-form-field>
             <button mat-raised-button color="primary" type="submit" class="full-width" [disabled]="loading">
@@ -50,9 +50,20 @@ import { CommonModule } from '@angular/common';
     </div>
   `,
   styles: [`
-    .auth-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .auth-card { max-width: 400px; width: 100%; margin: 1rem; }
+    .auth-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 1rem;
+    }
+    .auth-card { max-width: 400px; width: 100%; }
     .error { color: #f44336; margin-top: 1rem; text-align: center; }
+
+    @media (max-width: 480px) {
+      .auth-container { padding: 0.5rem; align-items: flex-start; padding-top: 5vh; }
+    }
   `]
 })
 export class RegisterComponent {

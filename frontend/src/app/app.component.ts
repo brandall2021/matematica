@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule, MatDrawer } from '@angular/material/sidenav';
@@ -22,9 +22,9 @@ import { AuthService } from './core/services/auth.service';
       <button mat-icon-button (click)="drawer.toggle()" *ngIf="auth.isLoggedIn()">
         <mat-icon>menu</mat-icon>
       </button>
-      <span>Matematica</span>
+      <span class="app-title">Matematica</span>
       <span class="spacer"></span>
-      <span class="mat-caption" *ngIf="auth.currentUser() as user">
+      <span class="mat-caption user-name" *ngIf="auth.currentUser() as user">
         {{ user.name }}
       </span>
       <button mat-icon-button *ngIf="auth.isLoggedIn()" (click)="auth.logout()" matTooltip="Cerrar sesión">
@@ -33,15 +33,15 @@ import { AuthService } from './core/services/auth.service';
     </mat-toolbar>
 
     <mat-drawer-container *ngIf="auth.isLoggedIn()">
-      <mat-drawer mode="side" opened>
-        <mat-nav-list>
+      <mat-drawer [mode]="isMobile ? 'over' : 'side'" [opened]="!isMobile" #drawer>
+        <mat-nav-list (click)="isMobile && drawer.close()">
           <a mat-list-item routerLink="/chat" routerLinkActive="active-link">
             <mat-icon matListItemIcon>chat</mat-icon>
             <span matListItemTitle>Chat</span>
           </a>
           <a mat-list-item routerLink="/math" routerLinkActive="active-link">
             <mat-icon matListItemIcon>calculate</mat-icon>
-            <span matListItemTitle>Matemáticas</span>
+            <span matListItemTitle>Matematicas</span>
           </a>
           <a mat-list-item routerLink="/documents" routerLinkActive="active-link">
             <mat-icon matListItemIcon>description</mat-icon>
@@ -57,11 +57,11 @@ import { AuthService } from './core/services/auth.service';
           </a>
           <a mat-list-item routerLink="/admin" routerLinkActive="active-link" *ngIf="auth.hasRole('ADMIN')">
             <mat-icon matListItemIcon>admin_panel_settings</mat-icon>
-            <span matListItemTitle>Administración</span>
+            <span matListItemTitle>Administracion</span>
           </a>
           <a mat-list-item routerLink="/settings" routerLinkActive="active-link">
             <mat-icon matListItemIcon>settings</mat-icon>
-            <span matListItemTitle>Configuración</span>
+            <span matListItemTitle>Configuracion</span>
           </a>
         </mat-nav-list>
       </mat-drawer>
@@ -82,9 +82,24 @@ import { AuthService } from './core/services/auth.service';
     .content { padding: 1.5rem; }
     .active-link { background: rgba(63, 81, 181, 0.1); }
     .mat-caption { font-size: 0.875rem; margin-right: 1rem; }
+    .app-title { font-weight: 600; }
+
+    @media (max-width: 768px) {
+      .content { padding: 0.75rem; }
+      .user-name { display: none; }
+    }
   `]
 })
 export class AppComponent {
   @ViewChild('drawer') drawer!: MatDrawer;
-  constructor(public auth: AuthService) {}
+  isMobile = false;
+
+  @HostListener('window:resize')
+  onResize() {
+    this.isMobile = window.innerWidth < 768;
+  }
+
+  constructor(public auth: AuthService) {
+    this.onResize();
+  }
 }
