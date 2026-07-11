@@ -97,7 +97,7 @@ app:
     log-body: true
 
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,https://matematica.face-unt.ar}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,https://matematica.face-unt.ar,http://200.58.102.223:8008,http://200.58.102.223}
 
 logging:
   level:
