@@ -26,5 +26,6 @@ HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
   CMD wget -qO- http://localhost:8080/actuator/health || exit 1
 
 ENTRYPOINT ["java", \
+  "-Xms256m", "-Xmx768m", \
   "-jar", "app.jar", \
   "--spring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod}"]

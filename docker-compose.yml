@@ -21,6 +21,27 @@ services:
     networks:
       - matematica-net
 
+  qdrant-init:
+    image: curlimages/curl:latest
+    container_name: matematica-qdrant-init
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        echo 'Creating Qdrant collection...' &&
+        curl -s -X PUT http://qdrant:6333/collections/matematica_chunks -H 'Content-Type: application/json' -d '{
+          \"vectors\": {
+            \"size\": 1536,
+            \"distance\": \"Cosine\"
+          }
+        }' &&
+        echo '' &&
+        echo 'Collection created successfully'
+      "
+    networks:
+      - matematica-net
+
   backend:
     build:
       context: ./backend
@@ -30,6 +51,8 @@ services:
     depends_on:
       qdrant:
         condition: service_healthy
+      qdrant-init:
+        condition: service_completed_successfully
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       DB_USERNAME: ${DB_USER:-brandall}
