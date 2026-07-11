@@ -97,14 +97,15 @@ public class IndexerService {
             chunks = null;
             System.gc();
 
+            final int totalIndexed = indexed;
             transactionTemplate.executeWithoutResult(status -> {
-                document.setChunkCount(indexed);
+                document.setChunkCount(totalIndexed);
                 document.setIndexed(true);
                 document.setErrorMessage(null);
                 documentRepository.save(document);
             });
 
-            log.info("Indexed document {} with {} chunks", document.getId(), indexed);
+            log.info("Indexed document {} with {} chunks", document.getId(), totalIndexed);
         } catch (Exception e) {
             log.error("Error indexing document {}", document.getId(), e);
             transactionTemplate.executeWithoutResult(status -> {
