@@ -61,6 +61,8 @@ services:
     restart: always
     depends_on:
       - backend
+    ports:
+      - "8008:8008"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`sistemas-matematica-6ubzi2-f19714-200-58-102-223.sslip.io`)"
