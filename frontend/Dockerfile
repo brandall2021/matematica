@@ -17,7 +17,7 @@ RUN rm -rf /usr/share/nginx/html/* && \
     rm -f /etc/nginx/conf.d/default.conf
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist/matematica-frontend/browser /usr/share/nginx/html
+COPY --from=build /app/dist/browser /usr/share/nginx/html
 
 EXPOSE 80
 
