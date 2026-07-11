@@ -65,7 +65,7 @@ services:
       - "8008:8008"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`sistemas-matematica-6ubzi2-f19714-200-58-102-223.sslip.io`)"
+      - "traefik.http.routers.frontend.rule=Host(`matematica.face-unt.ar`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.services.frontend.loadbalancer.server.port=8008"
       - "traefik.http.routers.frontend.tls=true"
