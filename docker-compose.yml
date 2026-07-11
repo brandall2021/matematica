@@ -32,9 +32,9 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
-      DB_USERNAME: ${DB_USER:-matematica}
-      DB_PASSWORD: ${DB_PASSWORD:-matematica}
-      DB_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/${DB_NAME:-matematica}
+      DB_USERNAME: ${DB_USER:-brandall}
+      DB_PASSWORD: ${DB_PASSWORD:-Hansol1974+}
+      DB_URL: jdbc:postgresql://${DB_HOST:-186.153.163.188}:5432/${DB_NAME:-matematica}
       QDRANT_HOST: qdrant
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
