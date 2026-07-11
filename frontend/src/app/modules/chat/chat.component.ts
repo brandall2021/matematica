@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/services/api.service';
 import * as katex from 'katex';
-import * as DOMPurify from 'dompurify';
+import DOMPurify from 'dompurify';
 
 interface Message {
   role: 'user' | 'assistant';

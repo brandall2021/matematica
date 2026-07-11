@@ -1,6 +1,7 @@
 declare module 'dompurify' {
-  const DOMPurify: {
+  interface DOMPurifyStatic {
     sanitize(dirty: string, config?: { ALLOWED_TAGS?: string[] }): string;
-  };
+  }
+  const DOMPurify: DOMPurifyStatic;
   export default DOMPurify;
 }
