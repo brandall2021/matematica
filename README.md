@@ -41,7 +41,7 @@ Plataforma web que funciona como un tutor virtual para estudiantes de matematica
 | Spring Security | 3.3 | Autenticacion y autorizacion |
 | Spring AI | 1.0.0-M2 | Integracion con modelos de IA |
 | JPA / Hibernate | - | ORM y persistencia |
-| PostgreSQL | 16 | Base de datos relacional |
+| PostgreSQL | 16+ | Base de datos relacional |
 | Qdrant | 1.12 | Base de datos vectorial |
 | Apache Tika | 2.9 | Extraccion de texto de documentos |
 | Apache POI | 5.3 | Procesamiento DOCX/PPTX |
@@ -59,13 +59,14 @@ Plataforma web que funciona como un tutor virtual para estudiantes de matematica
 | KaTeX | 0.16 | Renderizado de formulas matematicas |
 | TypeScript | 5.8 | Lenguaje principal |
 | RxJS | 7.8 | Programacion reactiva |
+| DOMPurify | - | Sanitizacion de HTML (XSS) |
 
 ### Infraestructura (Docker)
 | Servicio | Imagen | Proposito |
 |----------|--------|-----------|
-| PostgreSQL | 16-alpine | Base de datos |
 | Qdrant | 1.12 | Base vectorial |
 | Ollama | latest | Modelos locales (opcional) |
+| PostgreSQL | externo | Base de datos relacional |
 
 ---
 
@@ -121,7 +122,7 @@ El tutor puede:
 - Adaptar la explicacion al nivel del alumno
 - **Nunca inventa informacion** -- si no hay contexto suficiente, lo indica
 
-### Motor Matematico (Cculo Simbolico)
+### Motor Matematico (Calculo Simbolico)
 Operaciones soportadas (21 total):
 
 | Categoria | Operacion | Parametros |
@@ -176,11 +177,55 @@ El docente puede configurar:
 
 ---
 
+## Seguridad
+
+- Autenticacion mediante **JWT** con refresh tokens
+- **Roles y permisos** granulares
+- **BCrypt** para hash de contrasenas
+- **Rate Limiting**: 30 req/min general, 10 req/min chat/RAG
+- **XSS Protection**: Sanitizacion con DOMPurify en el frontend
+- **IDOR Protection**: Validacion de pertenencia de sesiones en el backend
+- **Code Injection Protection**: Validacion regex en el motor matematico
+- **CORS** configurable por variable de entorno
+- **Auditoria** de eventos del sistema
+- **Validacion** de entrada en todos los endpoints
+- **Manejo centralizado** de errores con Problem Detail
+- **JWT Secret validation** en perfil prod (rechaza secrets por defecto)
+
+---
+
+## Variables de Entorno
+
+### Backend
+
+| Variable | Descripcion | Default |
+|----------|-------------|---------|
+| `DB_URL` | URL JDBC de PostgreSQL | `jdbc:postgresql://localhost:5432/matematica` |
+| `DB_USERNAME` | Usuario de BD | `matematica` |
+| `DB_PASSWORD` | Contrasena de BD | `matematica` |
+| `JWT_SECRET` | Secreto para firmar JWT (base64, min 32 bytes) | *(requerido en prod)* |
+| `OPENAI_API_KEY` | API key de OpenAI | *(requerido)* |
+| `EMBEDDING_TYPE` | Proveedor de embeddings: `openai`, `ollama` | `openai` |
+| `OLLAMA_URL` | URL de Ollama | `http://ollama:11434` |
+| `QDRANT_HOST` | Host de Qdrant | `localhost` |
+| `QDRANT_PORT` | Puerto gRPC de Qdrant | `6334` |
+| `SPRING_PROFILES_ACTIVE` | Perfil de Spring: `dev`, `prod`, `test` | `prod` |
+| `CORS_ALLOWED_ORIGINS` | Origenes permitidos (separados por coma) | `http://localhost:4200` |
+
+### Frontend
+
+| Variable | Descripcion | Default |
+|----------|-------------|---------|
+| `apiUrl` | URL base de la API | `/api` (Docker) / `http://localhost:8080/api` (dev) |
+
+---
+
 ## Instalacion y Despliegue
 
 ### Requisitos
 - Docker y Docker Compose
 - Git
+- PostgreSQL externo (Docker, RDS, Supabase, Neon, etc.)
 - (Opcional) Node.js 22 + Angular CLI para desarrollo frontend
 - (Opcional) Java 21 + Maven para desarrollo backend
 
@@ -191,42 +236,25 @@ El docente puede configurar:
 git clone https://github.com/brandall2021/matematica.git
 cd matematica
 
-# Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tu API key de OpenAI
+# Configurar variables de entorno en docker-compose.yml
+# (ajustar DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET, OPENAI_API_KEY)
 
-# Iniciar todos los servicios
+# Iniciar servicios
 docker compose up -d
 
 # Ver logs
 docker compose logs -f
 ```
 
-### Comandos Utiles (Makefile)
+### Servicios Docker
 
-```bash
-make up              # Iniciar servicios
-make down            # Detener servicios
-make logs            # Ver logs de todos los servicios
-make restart         # Reiniciar servicios
-make psql            # Conectar a PostgreSQL
-make backend-logs    # Logs solo del backend
-make frontend-logs   # Logs solo del frontend
-make ollama-up       # Iniciar con Ollama (modelos locales)
-make ollama-pull     # Descargar modelos Ollama
-make clean           # Limpiar todo (volumes + imagenes)
-make status          # Ver estado de servicios
-```
+El `docker-compose.yml` incluye:
+- **backend**: Spring Boot (puerto 8080)
+- **frontend**: Angular + nginx (puerto 8008)
+- **qdrant**: Base vectorial (puertos 6333/6334)
+- **ollama**: Modelos locales (perfil opcional, puerto 11434)
 
-### Acceso a la Aplicacion
-
-| Servicio | URL |
-|----------|-----|
-| Frontend | http://localhost |
-| API (Swagger) | http://localhost:8080/swagger-ui.html |
-| API (OpenAPI) | http://localhost:8080/api/docs |
-| Qdrant UI | http://localhost:6333/dashboard |
-| Health Check | http://localhost:8080/actuator/health |
+> **Nota**: PostgreSQL debe estar en un servidor externo. Configurar `DB_URL`, `DB_USERNAME` y `DB_PASSWORD` en el compose.
 
 ### Desarrollo Local
 
@@ -277,7 +305,7 @@ POST /api/math/evaluate -> Evaluar expresion matematica
 POST /api/math/plot     -> Generar datos de grafico
 ```
 
-### Administracion
+### Administracion (requiere rol ADMIN)
 ```
 GET  /api/stats/admin    -> Estadisticas del sistema
 POST /api/indexer/reindex -> Reindexar todos los documentos
@@ -297,189 +325,92 @@ GET /api/history -> Historial de consultas del usuario
 
 ---
 
-## Variables de Entorno
-
-| Variable | Descripcion | Default |
-|----------|-------------|---------|
-| `DB_NAME` | Nombre de la base de datos | `matematica` |
-| `DB_USER` | Usuario de BD | `matematica` |
-| `DB_PASSWORD` | Contrasena de BD | `matematica` |
-| `JWT_SECRET` | Secreto para firmar JWT (base64) | *(requerido)* |
-| `OPENAI_API_KEY` | API key de OpenAI | *(requerido)* |
-| `EMBEDDING_TYPE` | Proveedor de embeddings: `openai`, `ollama` | `openai` |
-| `OLLAMA_URL` | URL de Ollama | `http://ollama:11434` |
-| `SPRING_PROFILES_ACTIVE` | Perfil de Spring: `dev`, `prod`, `test` | `prod` |
-
----
-
 ## Despliegue en Dokploy
 
-Dokploy es una plataforma open-source de despliegue auto-hospedada. Sigue estos pasos para desplegar Matematica en Dokploy.
+### Paso 1: Base de Datos Externa
 
-### Prerequisitos en Dokploy
-- Dokploy instalado y funcionando
-- Docker disponible en el servidor
-- Dominio configurado (opcional pero recomendado)
+Configura un PostgreSQL externo (Docker en otra red, RDS, Supabase, Neon, etc.) y obtiene la connection string.
 
-### Paso 1: Configurar la Base de Datos
+### Paso 2: Crear Servicio Docker Compose en Dokploy
 
-En Dokploy ve a **Databases** y crea dos servicios:
+1. Ve a **Docker Compose** → Nuevo proyecto
+2. Conecta el repositorio: `https://github.com/brandall2021/matematica.git`
+3. Selecciona el archivo `docker-compose.yml`
 
-1. **PostgreSQL**
-   - Nombre: `matematica-postgres`
-   - Puerto interno: `5432`
-   - Base de datos: `matematica`
-   - Usuario: `matematica`
-   - Contrasena: *(generar una segura)*
-   - Guarda las credenciales para usarlas despues.
+### Paso 3: Variables de Entorno en Dokploy
 
-2. **Qdrant** (Vector Database)
-   - Nombre: `matematica-qdrant`
-   - Imagen: `qdrant/qdrant:v1.12.0`
-   - Puerto: `6333` (HTTP) y `6334` (gRPC)
-
-### Paso 2: Crear el Servicio Backend
-
-En Dokploy ve a **Docker Compose** y crea un nuevo proyecto:
-
-**Proyecto**: `matematica`
-
-Crea el archivo `docker-compose.yml`:
-
-```yaml
-services:
-  backend:
-    image: brandall2021/matematica-backend:latest
-    container_name: matematica-backend
-    restart: always
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      DB_URL: jdbc:postgresql://postgres:5432/matematica
-      DB_USERNAME: matematica
-      DB_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      EMBEDDING_TYPE: openai
-      QDRANT_HOST: qdrant
-      QDRANT_PORT: 6334
-      SERVER_PORT: 8080
-    ports:
-      - "8080:8080"
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    networks:
-      - matematica-net
-
-  frontend:
-    image: brandall2021/matematica-frontend:latest
-    container_name: matematica-frontend
-    restart: always
-    depends_on:
-      - backend
-    ports:
-      - "80:80"
-    networks:
-      - matematica-net
-
-networks:
-  matematica-net:
-    name: matematica-network
-    driver: bridge
-```
-
-### Paso 3: Configurar Variables de Entorno
-
-En el servicio Backend de Dokploy, configura estas variables de entorno:
+En el servicio Backend, configura:
 
 ```
 SPRING_PROFILES_ACTIVE=prod
-DB_URL=jdbc:postgresql://matematica-postgres:5432/matematica
-DB_USERNAME=matematica
-DB_PASSWORD=<tu-password-de-postgres>
+DB_URL=jdbc:postgresql://<host-externo>:5432/matematica
+DB_USERNAME=<usuario>
+DB_PASSWORD=<password>
 JWT_SECRET=<generar-con-openssl-rand-base64-64>
-OPENAI_API_KEY=sk-tu-api-key-aqui
+OPENAI_API_KEY=sk-...
 EMBEDDING_TYPE=openai
 QDRANT_HOST=matematica-qdrant
 QDRANT_PORT=6334
+CORS_ALLOWED_ORIGINS=https://tu-dominio.com,http://ip-servidor:8008
 ```
 
-### Paso 4: Configurar Dominios (Opcional)
+### Paso 4: Configurar Dominio
 
-En cada servicio de Dokploy, configura los dominios:
+En Dokploy → tu servicio → **Domains**:
+- Agrega dominio (ej: `matematica.tudominio.com`)
+- Puerto: `8008`
+- Protocolo: HTTPS
 
-| Servicio | Dominio | Puerto |
-|----------|---------|--------|
-| Frontend | `matematica.tudominio.com` | 80 (nginx) |
-| Backend | `api.tudominio.com` | 8080 |
+### Paso 5: Verificar
 
-### Paso 5: Actualizar CORS del Backend
-
-Si usas dominios personalizados, actualiza la variable de entorno:
-
-```
-APP_CORS_ALLOWED_ORIGINS=https://matematica.tudominio.com
-```
-
-### Paso 6: Build y Despliegue
-
-Si quieres hacer build desde el codigo fuente en Dokploy:
-
-1. **Backend**: Configura el servicio como "Build" con:
-   - Build Context: `backend/`
-   - Dockerfile: `Dockerfile`
-
-2. **Frontend**: Configura el servicio como "Build" con:
-   - Build Context: `frontend/`
-   - Dockerfile: `Dockerfile`
-
-O usa las imagenes pre-compiladas de Docker Hub.
-
-### Paso 7: Migraciones de Base de Datos
-
-Las migraciones de Flyway se ejecutan automaticamente al iniciar el backend. La primera vez creara todas las tablas y datos iniciales.
-
-### Paso 8: Verificar
-
-1. Verifica que el backend responda: `https://api.tudominio.com/actuator/health`
-2. Verifica que el frontend cargue: `https://matematica.tudominio.com`
-3. Registra un usuario nuevo desde el frontend
-4. Sube un documento de prueba
-5. Haz una pregunta al tutor
-
-### Configuracion SSL/HTTPS
-
-Dokploy soporta certificados SSL automaticos con Let's Encrypt. En la configuracion de dominio de cada servicio, habilita "HTTPS" y Dokploy gestionara el certificado automaticamente.
-
-### Backup de Base de Datos
-
-Para backup programado de PostgreSQL en Dokploy:
-
-```bash
-# Backup manual
-docker exec matematica-postgres pg_dump -U matematica matematica > backup.sql
-
-# Restaurar
-cat backup.sql | docker exec -i matematica-postgres psql -U matematica -d matematica
-```
+1. Backend: `https://tu-dominio.com/actuator/health`
+2. Frontend: `https://tu-dominio.com`
+3. Registrar usuario y probar el tutor
 
 ---
 
-## Seguridad
+## Estructura del Proyecto
 
-- Autenticacion mediante **JWT** con refresh tokens
-- **Roles y permisos** granulares
-- **BCrypt** para hash de contrasenas
-- **Auditoria** de eventos del sistema
-- **CORS** configurable
-- **Validacion** de entrada en todos los endpoints
-- **Manejo centralizado** de errores con Problem Detail
+```
+matematica/
++-- backend/
+|   +-- src/main/java/com/matematica/
+|   |   +-- auth/          # Autenticacion (JWT, registro, login)
+|   |   +-- chat/          # Chat con sesiones y mensajes
+|   |   +-- config/        # Rate limiting, validacion prod, excepciones
+|   |   +-- documents/     # Gestion documental (upload, parser)
+|   |   +-- history/       # Historial de consultas
+|   |   +-- indexer/       # Indexador de documentos a vectores
+|   |   +-- math/          # Motor matematico (21 operaciones + plot)
+|   |   +-- rag/           # RAG semantico (busqueda + LLM)
+|   |   +-- security/      # JWT filter, SecurityConfig, IDOR protection
+|   |   +-- settings/      # Configuracion del sistema
+|   |   +-- stats/         # Estadisticas del admin
+|   +-- src/main/resources/
+|   |   +-- application.yml
+|   |   +-- db/migration/  # Flyway migrations
+|   +-- pom.xml
+|   +-- Dockerfile
++-- frontend/
+|   +-- src/app/
+|   |   +-- core/          # Guards, interceptors, services
+|   |   +-- modules/
+|   |   |   +-- auth/      # Login, Register
+|   |   |   +-- chat/      # Chat con tutor (KaTeX, sesiones, DOMPurify)
+|   |   |   +-- math/      # Motor matematico (21 ops, SVG plots)
+|   |   |   +-- documents/ # Gestion documental
+|   |   |   +-- history/   # Historial de consultas
+|   |   |   +-- dashboard/ # Dashboard admin
+|   |   |   +-- admin/     # Panel administracion
+|   |   |   +-- settings/  # Configuracion
+|   +-- angular.json
+|   +-- package.json
+|   +-- Dockerfile
+|   +-- nginx.conf
++-- docker-compose.yml
++-- Makefile
++-- .env.example
+```
 
 ---
 
@@ -497,51 +428,8 @@ cat backup.sql | docker exec -i matematica-postgres psql -U matematica -d matema
 - Componentes standalone (sin NgModule)
 - Lazy loading de rutas
 - Interceptors HTTP para auth y errores
-
----
-
-## Estructura del Proyecto
-
-```
-matematica/
-+-- backend/
-|   +-- src/main/java/com/matematica/
-|   |   +-- auth/          # Autenticacion (JWT, registro, login)
-|   |   +-- chat/          # Chat con sesiones y mensajes
-|   |   +-- config/        # Excepciones globales
-|   |   +-- documents/     # Gestion documental (upload, parser)
-|   |   +-- history/       # Historial de consultas
-|   |   +-- indexer/       # Indexador de documentos a vectores
-|   |   +-- math/          # Motor matematico (21 operaciones + plot)
-|   |   +-- rag/           # RAG semantico (busqueda + LLM)
-|   |   +-- security/      # JWT filter, SecurityConfig
-|   |   +-- settings/      # Configuracion del sistema
-|   |   +-- stats/         # Estadisticas del admin
-|   +-- src/main/resources/
-|   |   +-- application.yml
-|   |   +-- db/migration/  # Flyway migrations
-|   +-- pom.xml
-|   +-- Dockerfile
-+-- frontend/
-|   +-- src/app/
-|   |   +-- core/          # Guards, interceptors, services
-|   |   +-- modules/
-|   |   |   +-- auth/      # Login, Register
-|   |   |   +-- chat/      # Chat con tutor (KaTeX, sesiones)
-|   |   |   +-- math/      # Motor matematico (21 ops, SVG plots)
-|   |   |   +-- documents/ # Gestion documental
-|   |   |   +-- history/   # Historial de consultas
-|   |   |   +-- dashboard/ # Dashboard admin
-|   |   |   +-- admin/     # Panel administracion
-|   |   |   +-- settings/  # Configuracion
-|   +-- angular.json
-|   +-- package.json
-|   +-- Dockerfile
-|   +-- nginx.conf
-+-- docker-compose.yml
-+-- Makefile
-+-- .env.example
-```
+- Sanitizacion XSS con DOMPurify
+- Rate limiting configurable
 
 ---
 
