@@ -1,25 +1,6 @@
 name: matematica
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: matematica-postgres
-    restart: always
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: ${DB_NAME:-matematica}
-      POSTGRES_USER: ${DB_USER:-matematica}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-matematica}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-matematica} -d ${DB_NAME:-matematica}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    networks:
-      - matematica-net
-
   qdrant:
     image: qdrant/qdrant:v1.12.0
     container_name: matematica-qdrant
@@ -47,15 +28,13 @@ services:
     container_name: matematica-backend
     restart: always
     depends_on:
-      postgres:
-        condition: service_healthy
       qdrant:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       DB_USERNAME: ${DB_USER:-matematica}
       DB_PASSWORD: ${DB_PASSWORD:-matematica}
-      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-matematica}
+      DB_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/${DB_NAME:-matematica}
       QDRANT_HOST: qdrant
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
@@ -107,8 +86,6 @@ services:
       - matematica-net
 
 volumes:
-  postgres_data:
-    name: matematica-postgres-data
   qdrant_data:
     name: matematica-qdrant-data
   ollama_data:
