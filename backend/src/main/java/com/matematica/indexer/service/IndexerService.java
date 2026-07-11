@@ -31,56 +31,87 @@ public class IndexerService {
     @Value("${app.rag.chunk-overlap:64}")
     private int chunkOverlap;
 
+    private static final int MAX_CHARS = 100_000;
+    private static final int BATCH_SIZE = 50;
+
     @Async
     public void indexDocument(Document document) {
-        transactionTemplate.executeWithoutResult(status -> {
-            try {
-                String text = document.getExtractedText();
-                if (text == null || text.isBlank()) {
+        try {
+            String text = document.getExtractedText();
+            if (text == null || text.isBlank()) {
+                transactionTemplate.executeWithoutResult(status -> {
                     document.setErrorMessage("No text extracted");
                     documentRepository.save(document);
-                    return;
+                });
+                return;
+            }
+
+            if (text.length() > MAX_CHARS) {
+                text = text.substring(0, MAX_CHARS);
+                log.warn("Document {} truncated to {} chars", document.getId(), MAX_CHARS);
+            }
+
+            String docId = document.getId().toString();
+            String filename = document.getFilename();
+            String title = document.getTitle();
+            String author = document.getAuthor();
+            String subject = document.getSubject();
+            String unit = document.getUnit();
+            String topic = document.getTopic();
+            String source = document.getSource();
+            String sourceUrl = document.getSourceUrl();
+            String typeName = document.getType().name();
+
+            List<org.springframework.ai.document.Document> chunks = textSplitter.split(text, chunkSize, chunkOverlap);
+            text = null;
+
+            int totalChunks = chunks.size();
+            int indexed = 0;
+
+            for (int i = 0; i < totalChunks; i += BATCH_SIZE) {
+                int end = Math.min(i + BATCH_SIZE, totalChunks);
+                List<org.springframework.ai.document.Document> batch = new ArrayList<>(end - i);
+
+                for (int j = i; j < end; j++) {
+                    org.springframework.ai.document.Document chunk = new org.springframework.ai.document.Document(chunks.get(j).getContent());
+                    chunk.getMetadata().put("documentId", docId);
+                    chunk.getMetadata().put("chunkIndex", j);
+                    chunk.getMetadata().put("filename", filename);
+                    chunk.getMetadata().put("title", title);
+                    chunk.getMetadata().put("author", author);
+                    chunk.getMetadata().put("subject", subject);
+                    chunk.getMetadata().put("unit", unit);
+                    chunk.getMetadata().put("topic", topic);
+                    chunk.getMetadata().put("source", source);
+                    chunk.getMetadata().put("sourceUrl", sourceUrl);
+                    chunk.getMetadata().put("type", typeName);
+                    batch.add(chunk);
                 }
 
-                int maxChars = 500_000;
-                if (text.length() > maxChars) {
-                    text = text.substring(0, maxChars);
-                    log.warn("Document {} truncated from original to {} chars", document.getId(), maxChars);
-                }
+                vectorStore.add(batch);
+                indexed += batch.size();
+                System.gc();
+                log.debug("Indexed batch {}/{} for document {}", indexed, totalChunks, document.getId());
+            }
 
-                List<org.springframework.ai.document.Document> chunks = textSplitter.split(text, chunkSize, chunkOverlap);
+            chunks = null;
+            System.gc();
 
-                List<org.springframework.ai.document.Document> aiDocs = new ArrayList<>();
-                for (int i = 0; i < chunks.size(); i++) {
-                    org.springframework.ai.document.Document chunk = new org.springframework.ai.document.Document(chunks.get(i).getContent());
-                    chunk.getMetadata().put("documentId", document.getId().toString());
-                    chunk.getMetadata().put("chunkIndex", i);
-                    chunk.getMetadata().put("filename", document.getFilename());
-                    chunk.getMetadata().put("title", document.getTitle());
-                    chunk.getMetadata().put("author", document.getAuthor());
-                    chunk.getMetadata().put("subject", document.getSubject());
-                    chunk.getMetadata().put("unit", document.getUnit());
-                    chunk.getMetadata().put("topic", document.getTopic());
-                    chunk.getMetadata().put("source", document.getSource());
-                    chunk.getMetadata().put("sourceUrl", document.getSourceUrl());
-                    chunk.getMetadata().put("type", document.getType().name());
-                    aiDocs.add(chunk);
-                }
-
-                vectorStore.add(aiDocs);
-
-                document.setChunkCount(aiDocs.size());
+            transactionTemplate.executeWithoutResult(status -> {
+                document.setChunkCount(indexed);
                 document.setIndexed(true);
                 document.setErrorMessage(null);
                 documentRepository.save(document);
+            });
 
-                log.info("Indexed document {} with {} chunks", document.getId(), aiDocs.size());
-            } catch (Exception e) {
-                log.error("Error indexing document {}", document.getId(), e);
+            log.info("Indexed document {} with {} chunks", document.getId(), indexed);
+        } catch (Exception e) {
+            log.error("Error indexing document {}", document.getId(), e);
+            transactionTemplate.executeWithoutResult(status -> {
                 document.setErrorMessage(e.getMessage());
                 documentRepository.save(document);
-            }
-        });
+            });
+        }
     }
 
     @Async
