@@ -42,6 +42,12 @@ public class IndexerService {
                     return;
                 }
 
+                int maxChars = 500_000;
+                if (text.length() > maxChars) {
+                    text = text.substring(0, maxChars);
+                    log.warn("Document {} truncated from original to {} chars", document.getId(), maxChars);
+                }
+
                 List<org.springframework.ai.document.Document> chunks = textSplitter.split(text, chunkSize, chunkOverlap);
 
                 List<org.springframework.ai.document.Document> aiDocs = new ArrayList<>();
