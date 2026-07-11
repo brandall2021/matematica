@@ -34,7 +34,9 @@ public class ChatController {
             @RequestParam(defaultValue = "20") int size,
             Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
-        return ResponseEntity.ok(chatService.getSessions(userId, page, size));
+        int validPage = Math.max(0, page);
+        int validSize = Math.min(100, Math.max(1, size));
+        return ResponseEntity.ok(chatService.getSessions(userId, validPage, validSize));
     }
 
     @GetMapping("/sessions/{sessionId}/messages")
@@ -42,10 +44,7 @@ public class ChatController {
             @PathVariable UUID sessionId,
             Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
-        var messages = chatService.getMessages(sessionId);
-        if (!messages.isEmpty() && !messages.getFirst().getUserId().equals(userId)) {
-            return ResponseEntity.notFound().build();
-        }
+        var messages = chatService.getMessages(sessionId, userId);
         return ResponseEntity.ok(messages);
     }
 }

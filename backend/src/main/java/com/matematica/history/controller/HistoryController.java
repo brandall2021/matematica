@@ -23,6 +23,8 @@ public class HistoryController {
             @RequestParam(defaultValue = "20") int size,
             Authentication auth) {
         UUID userId = UUID.fromString(auth.getName());
-        return ResponseEntity.ok(historyService.getHistory(userId, page, size));
+        int validPage = Math.max(0, page);
+        int validSize = Math.min(100, Math.max(1, size));
+        return ResponseEntity.ok(historyService.getHistory(userId, validPage, validSize));
     }
 }

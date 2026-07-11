@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface ChatSessionRepository extends JpaRepository<ChatSession, UUID> {
     Page<ChatSession> findByUserIdOrderByUpdatedAtDesc(UUID userId, Pageable pageable);
+    boolean existsByIdAndUserId(UUID id, UUID userId);
 }

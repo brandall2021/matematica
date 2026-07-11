@@ -30,6 +30,8 @@ public class DocumentService {
         try {
             String filename = file.getOriginalFilename();
             DocumentType type = detectType(filename);
+            
+            validateContentType(file, type);
 
             var parsed = documentParser.parse(file, type);
             String cleanedText = parsed.text().replaceAll("\\s+", " ").trim();
@@ -124,6 +126,25 @@ public class DocumentService {
         if (lower.endsWith(".txt")) return DocumentType.TXT;
         if (lower.endsWith(".md")) return DocumentType.MARKDOWN;
         return DocumentType.TXT;
+    }
+
+    private void validateContentType(MultipartFile file, DocumentType type) {
+        String contentType = file.getContentType();
+        if (contentType == null) {
+            return;
+        }
+        
+        boolean valid = switch (type) {
+            case PDF -> "application/pdf".equals(contentType);
+            case DOCX -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(contentType);
+            case PPTX -> "application/vnd.openxmlformats-officedocument.presentationml.presentation".equals(contentType);
+            case TXT, MARKDOWN -> "text/plain".equals(contentType) || "text/markdown".equals(contentType) || contentType.startsWith("text/");
+            case YOUTUBE_VIDEO -> true;
+        };
+        
+        if (!valid) {
+            throw new IllegalArgumentException("File content type " + contentType + " does not match expected type for " + type);
+        }
     }
 
     private DocumentResponse toResponse(Document doc) {

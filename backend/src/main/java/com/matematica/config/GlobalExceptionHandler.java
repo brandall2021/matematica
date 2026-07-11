@@ -1,6 +1,7 @@
 package com.matematica.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -15,6 +16,9 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @Value("${spring.profiles.active:default}")
+    private String activeProfile;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
@@ -35,7 +39,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
         var problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
         problem.setTitle("Unauthorized");
-        problem.setDetail(ex.getMessage());
+        problem.setDetail("Invalid credentials");
         return problem;
     }
 
@@ -43,7 +47,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
         var problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Bad Request");
-        problem.setDetail(ex.getMessage());
+        problem.setDetail(isProd() ? "Invalid request parameters" : ex.getMessage());
         return problem;
     }
 
@@ -52,7 +56,11 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception", ex);
         var problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         problem.setTitle("Internal Server Error");
-        problem.setDetail("An unexpected error occurred");
+        problem.setDetail(isProd() ? "An unexpected error occurred" : ex.getMessage());
         return problem;
+    }
+
+    private boolean isProd() {
+        return "prod".equals(activeProfile);
     }
 }

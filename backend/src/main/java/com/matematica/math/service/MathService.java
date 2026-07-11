@@ -6,6 +6,7 @@ import com.matematica.math.dto.PlotResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.matheclipse.core.eval.ExprEvaluator;
 import org.matheclipse.core.interfaces.IExpr;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,8 +15,39 @@ public class MathService {
 
     private final ExprEvaluator evaluator = new ExprEvaluator(false, (short) 10);
 
+    private static final String SAFE_MATH_PATTERN = "^[a-zA-Z0-9\\s\\+\\-\\*\\/\\^\\(\\)\\[\\]\\{\\}\\,\\.\\=\\<\\>\\!\\|\\&\\;\\:\\'\\\"\\#\\$\\%\\@\\!\\?\\~\\`\\_\\\\\\s]*$";
+    private static final int MAX_EXPRESSION_LENGTH = 1000;
+
+    @Value("${app.math.plot-points:200}")
+    private int plotPoints;
+
+    @Value("${app.math.default-x-min:-10.0}")
+    private double defaultXMin;
+
+    @Value("${app.math.default-x-max:10.0}")
+    private double defaultXMax;
+
+    private void validateExpression(String expression) {
+        if (expression == null || expression.isBlank()) {
+            throw new IllegalArgumentException("Expression cannot be empty");
+        }
+        if (expression.length() > MAX_EXPRESSION_LENGTH) {
+            throw new IllegalArgumentException("Expression exceeds maximum length of " + MAX_EXPRESSION_LENGTH + " characters");
+        }
+        if (!expression.matches(SAFE_MATH_PATTERN)) {
+            throw new IllegalArgumentException("Expression contains invalid characters");
+        }
+    }
+
     public MathResponse evaluate(MathRequest request) {
         try {
+            validateExpression(request.expression());
+            if (request.variable() != null) {
+                validateExpression(request.variable());
+            }
+            if (request.point() != null) {
+                validateExpression(request.point());
+            }
             String result = switch (request.operation().toLowerCase()) {
                 case "derive", "derivative" -> derive(request.expression(), request.variable());
                 case "integrate", "integral" -> integrate(request.expression(), request.variable());
@@ -49,10 +81,14 @@ public class MathService {
     }
 
     public PlotResponse computePlotData(String expression, String variable, Double xMin, Double xMax, Double yMin, Double yMax) {
+        validateExpression(expression);
+        if (variable != null) {
+            validateExpression(variable);
+        }
         String v = variable != null ? variable : "x";
-        double min = xMin != null ? xMin : -10.0;
-        double max = xMax != null ? xMax : 10.0;
-        int numPoints = 200;
+        double min = xMin != null ? xMin : defaultXMin;
+        double max = xMax != null ? xMax : defaultXMax;
+        int numPoints = plotPoints;
         double step = (max - min) / (numPoints - 1);
 
         double[] xValues = new double[numPoints];

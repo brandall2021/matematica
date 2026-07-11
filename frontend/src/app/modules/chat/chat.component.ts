@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/services/api.service';
 import * as katex from 'katex';
+import * as DOMPurify from 'dompurify';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -140,20 +141,29 @@ export class ChatComponent implements AfterViewChecked {
   }
 
   renderContent(content: string): string {
-    return content.replace(/\$\$(.+?)\$\$/gs, (_, expr) => {
+    const withKaTeX = content.replace(/\$\$(.+?)\$\$/gs, (_, expr) => {
       try {
         return katex.renderToString(expr, { displayMode: true });
-      } catch { return expr; }
+      } catch (e) { 
+        console.error('KaTeX rendering error:', e);
+        return expr; 
+      }
     }).replace(/\$(.+?)\$/g, (_, expr) => {
       try {
         return katex.renderToString(expr, { displayMode: false });
-      } catch { return expr; }
+      } catch (e) { 
+        console.error('KaTeX rendering error:', e);
+        return expr; 
+      }
     });
+    return DOMPurify.sanitize(withKaTeX, { ALLOWED_TAGS: ['span', 'div', 'p', 'strong', 'em', 'br', 'svg', 'math', 'msqrt', 'mfrac', 'mi', 'mo', 'mn', 'msup', 'msub', 'mrow', 'merror', 'mglyph', 'semantics', 'annotation'] });
   }
 
   private scrollToBottom(): void {
     try {
       this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
-    } catch {}
+    } catch (e) {
+      console.error('Scroll error:', e);
+    }
   }
 }

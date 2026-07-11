@@ -73,6 +73,9 @@ app:
   math:
     engine: symja
     timeout-seconds: 30
+    plot-points: 200
+    default-x-min: -10.0
+    default-x-max: 10.0
 
   rag:
     chunk-size: 512
