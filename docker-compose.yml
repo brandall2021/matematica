@@ -11,13 +11,12 @@ services:
       POSTGRES_DB: ${DB_NAME:-matematica}
       POSTGRES_USER: ${DB_USER:-matematica}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-matematica}
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-matematica} -d ${DB_NAME:-matematica}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     networks:
       - matematica-net
 
