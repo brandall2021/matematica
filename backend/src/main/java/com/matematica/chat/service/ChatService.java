@@ -49,7 +49,7 @@ public class ChatService {
                 .build();
         messageRepository.save(userMessage);
 
-        var ragResponse = ragService.query(new RagQueryRequest(request.message()));
+        var ragResponse = ragService.query(new RagQueryRequest(request.message(), request.webSearchEnabled()));
 
         var assistantMessage = ChatMessage.builder()
                 .sessionId(session.getId())
@@ -67,6 +67,7 @@ public class ChatService {
                 session.getId(),
                 ragResponse.answer(),
                 ragResponse.sources(),
+                ragResponse.webSources(),
                 assistantMessage.getCreatedAt()
         );
     }

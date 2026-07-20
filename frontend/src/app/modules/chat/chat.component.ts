@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ApiService } from '../../core/services/api.service';
 import * as katex from 'katex';
 import DOMPurify from 'dompurify';
@@ -15,12 +16,13 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   sources?: string;
+  webSources?: string;
 }
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSelectModule, MatSlideToggleModule],
   template: `
     <div class="chat-container">
       <mat-card class="chat-card">
@@ -48,6 +50,13 @@ interface Message {
                 <strong>Fuentes:</strong><br>
                 <span [innerHTML]="msg.sources"></span>
               </div>
+              <div class="sources web-sources" *ngIf="msg.webSources">
+                <strong>Fuentes Web:</strong><br>
+                <span *ngFor="let ws of parseWebSources(msg.webSources)" class="web-source-item">
+                  <mat-icon class="web-icon">language</mat-icon>
+                  <a [href]="ws.url" target="_blank" rel="noopener">{{ ws.title }}</a>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -58,6 +67,12 @@ interface Message {
             </div>
           </div>
         </mat-card-content>
+
+        <div class="search-toggle">
+          <mat-slide-toggle [checked]="webSearchEnabled()" (change)="webSearchEnabled.set(!webSearchEnabled())">
+            Buscar en la web
+          </mat-slide-toggle>
+        </div>
 
         <mat-card-actions class="input-area">
           <mat-form-field appearance="outline" class="input-field">
@@ -74,7 +89,7 @@ interface Message {
   styles: [`
     .chat-container { max-width: 900px; margin: 0 auto; }
     .chat-card { min-height: calc(100vh - 120px); display: flex; flex-direction: column; }
-    .messages-container { flex: 1; overflow-y: auto; padding: 1rem; max-height: calc(100vh - 280px); }
+    .messages-container { flex: 1; overflow-y: auto; padding: 1rem; max-height: calc(100vh - 320px); }
     .empty-state { text-align: center; padding: 3rem 1rem; color: #666; }
     .empty-icon { font-size: 48px; width: 48px; height: 48px; }
     .examples { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
@@ -96,10 +111,16 @@ interface Message {
     .assistant .message-content { background: #f5f5f5; }
     .input-area { padding: 1rem; display: flex; gap: 0.5rem; align-items: center; }
     .input-field { flex: 1; }
+    .search-toggle { padding: 0 1rem 0.5rem; display: flex; align-items: center; }
+    .web-sources { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e0e0e0; }
+    .web-source-item { display: flex; align-items: center; gap: 0.25rem; margin: 0.25rem 0; }
+    .web-icon { font-size: 16px; width: 16px; height: 16px; color: #1976d2; }
+    .web-source-item a { color: #1976d2; text-decoration: none; font-size: 0.875rem; }
+    .web-source-item a:hover { text-decoration: underline; }
 
     @media (max-width: 768px) {
       .chat-card { min-height: calc(100vh - 80px); }
-      .messages-container { padding: 0.5rem; max-height: calc(100vh - 200px); }
+      .messages-container { padding: 0.5rem; max-height: calc(100vh - 240px); }
       .message-content { max-width: 90%; padding: 0.625rem 0.75rem; font-size: 0.9rem; }
       .input-area { padding: 0.5rem; gap: 0.25rem; }
       .examples { flex-direction: column; align-items: center; }
@@ -116,6 +137,7 @@ export class ChatComponent implements AfterViewChecked {
   inputMessage = '';
   loading = signal(false);
   sessionId: string | null = null;
+  webSearchEnabled = signal(false);
 
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
@@ -132,11 +154,20 @@ export class ChatComponent implements AfterViewChecked {
     this.inputMessage = '';
     this.loading.set(true);
 
-    this.api.sendMessage({ sessionId: this.sessionId ?? undefined, message: text })
+    this.api.sendMessage({
+      sessionId: this.sessionId ?? undefined,
+      message: text,
+      webSearchEnabled: this.webSearchEnabled()
+    })
       .subscribe({
         next: (res) => {
           this.sessionId = res.sessionId;
-          this.messages.update(m => [...m, { role: 'assistant', content: res.answer, sources: res.sources }]);
+          this.messages.update(m => [...m, {
+            role: 'assistant',
+            content: res.answer,
+            sources: res.sources,
+            webSources: res.webSources
+          }]);
           this.loading.set(false);
         },
         error: () => {
@@ -149,6 +180,14 @@ export class ChatComponent implements AfterViewChecked {
   askExample(text: string): void {
     this.inputMessage = text;
     this.sendMessage();
+  }
+
+  parseWebSources(webSources: string): { title: string; url: string }[] {
+    if (!webSources) return [];
+    return webSources.split('\n').filter(l => l.trim()).map(line => {
+      const match = line.match(/\[Web \d+\]\s+(.+?)\s+-\s+(.+)/);
+      return match ? { title: match[1], url: match[2] } : { title: line, url: '' };
+    });
   }
 
   renderContent(content: string): string {

@@ -294,6 +294,27 @@ GET  /api/chat/sessions/{id}/messages -> Mensajes de una sesion
 POST /api/rag/query                 -> Consulta RAG directa
 ```
 
+### Analytics (requiere rol ADMIN)
+```
+GET  /api/analytics/stats           -> Estadisticas de uso
+GET  /api/analytics/daily           -> Uso diario
+GET  /api/analytics/models          -> Uso por modelo
+GET  /api/analytics/top-users       -> Top usuarios por consumo
+POST /api/analytics/log             -> Registrar uso
+```
+
+### Audit Logs (requiere rol ADMIN)
+```
+GET  /api/audit/logs                -> Listar logs de auditoria
+GET  /api/audit/stats               -> Estadisticas de actividad
+```
+
+### Widget
+```
+POST /api/widget/chat               -> Chat via widget (API key requerida)
+POST /api/widget/key                -> Generar API key para widget
+```
+
 ### Documentos
 ```
 POST   /api/documents/upload   -> Subir archivo (PDF, DOCX, PPTX, TXT, MD)
@@ -501,6 +522,41 @@ matematica/
 ---
 
 ## Changelog Reciente
+
+### v3.0 - Features OpenAgent (Julio 2026)
+
+**Multi-Model Provider:**
+- Soporte para multiples proveedores: OpenAI, Claude, Gemini, DeepSeek, Ollama
+- Selector de modelo en la interfaz del chat
+- Configuracion centralizada de API keys por proveedor
+- Cambio de modelo por conversacion
+
+**Web Search para Tutor:**
+- Busqueda en web cuando el RAG local no tiene suficiente informacion
+- Integracion con Tavily API para busqueda semantica
+- Fallback automatico: RAG → Web Search
+- Fuentes web mostradas junto a fuentes del material de ca tedra
+
+**Chat Widget Embebible:**
+- Widget standalone que se puede embeber en cualquier sitio web
+- Un solo tag `<script>` para instalar
+- Temas configurables (azul, verde, morado)
+- Posicion configurable (esquina inferior derecha/izquierda)
+- API key por widget para control de acceso
+
+**Usage Analytics:**
+- Tracking de tokens consumidos por usuario y modelo
+- Estimacion de costos por provider
+- Dashboard con graficas de uso diario y por modelo
+- Top usuarios por consumo
+- Costos por operacion (CHAT, RAG_QUERY, DOCUMENT_INDEX)
+
+**Audit Logs:**
+- Historial completo de acciones de usuario
+- Filtrado por usuario, accion, rango de fechas, tipo de entidad
+- Export a CSV
+- Anotacion @AuditLog para logging automatico via AOP
+- Estadisticas de actividad
 
 ### v2.0 - Mejoras Integral (Julio 2026)
 

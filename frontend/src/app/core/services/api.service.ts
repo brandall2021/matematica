@@ -6,8 +6,8 @@ import { environment } from '../../../environments/environment';
 export interface RagQueryRequest { query: string; }
 export interface RagQueryResponse { answer: string; sources: string; contextChunksUsed: number; }
 
-export interface ChatRequest { sessionId?: string; message: string; }
-export interface ChatResponse { messageId: string; sessionId: string; answer: string; sources: string; timestamp: string; }
+export interface ChatRequest { sessionId?: string; message: string; webSearchEnabled?: boolean; }
+export interface ChatResponse { messageId: string; sessionId: string; answer: string; sources: string; webSources: string; timestamp: string; }
 export interface ChatSession { id: string; title: string; messageCount: number; createdAt: string; updatedAt: string; }
 export interface ChatMessage { id: string; role: 'USER' | 'ASSISTANT'; content: string; createdAt: string; }
 
@@ -28,6 +28,11 @@ export interface AppSetting { key: string; value: string; description: string; }
 export interface PageResponse<T> { content: T[]; totalElements: number; totalPages: number; number: number; size: number; }
 
 export interface AdminStats { totalDocuments: number; indexedDocuments: number; dailyQueries: number; totalChatSessions: number; avgResponseTime: number; totalTokensUsed: number; avgRagPrecision: number; }
+
+export interface UsageStatsData { totalRequests: number; totalInputTokens: number; totalOutputTokens: number; totalTokens: number; totalEstimatedCost: number; avgTokensPerRequest: number; uniqueUsers: number; }
+export interface DailyUsageData { date: string; requestCount: number; totalTokens: number; totalCost: number; }
+export interface ModelUsageData { modelProvider: string; modelName: string; requestCount: number; totalTokens: number; totalCost: number; }
+export interface TopUserData { userId: string; requestCount: number; totalTokens: number; totalCost: number; }
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -104,5 +109,39 @@ export class ApiService {
 
   updateSetting(key: string, value: string, description?: string): Observable<AppSetting> {
     return this.http.put<AppSetting>(`${this.baseUrl}/settings/${key}`, { key, value, description });
+  }
+
+  // Audit
+  getAuditLogs(params: { [key: string]: string | number }): Observable<PageResponse<any>> {
+    return this.http.get<PageResponse<any>>(`${this.baseUrl}/audit/logs`, { params });
+  }
+
+  getAuditStats(from: string, to: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/audit/stats`, { params: { from, to } });
+  }
+
+  // Analytics
+  logUsage(data: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/analytics/log`, data);
+  }
+
+  getUsageOverview(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/analytics/overview`);
+  }
+
+  getUsageStats(from: string, to: string): Observable<UsageStatsData> {
+    return this.http.get<UsageStatsData>(`${this.baseUrl}/analytics/stats`, { params: { from, to } });
+  }
+
+  getUsageDaily(from: string, to: string): Observable<DailyUsageData[]> {
+    return this.http.get<DailyUsageData[]>(`${this.baseUrl}/analytics/daily`, { params: { from, to } });
+  }
+
+  getUsageModels(from: string, to: string): Observable<ModelUsageData[]> {
+    return this.http.get<ModelUsageData[]>(`${this.baseUrl}/analytics/models`, { params: { from, to } });
+  }
+
+  getUsageTopUsers(from: string, to: string): Observable<TopUserData[]> {
+    return this.http.get<TopUserData[]>(`${this.baseUrl}/analytics/top-users`, { params: { from, to } });
   }
 }

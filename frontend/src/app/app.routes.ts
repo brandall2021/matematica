@@ -13,4 +13,6 @@ export const routes: Routes = [
   { path: 'admin', loadComponent: () => import('./modules/admin/admin.component').then(m => m.AdminComponent), canActivate: [authGuard, roleGuard], data: { roles: ['ADMIN'] } },
   { path: 'settings', loadComponent: () => import('./modules/settings/settings.component').then(m => m.SettingsComponent), canActivate: [authGuard] },
   { path: 'dashboard', loadComponent: () => import('./modules/dashboard/dashboard.component').then(m => m.DashboardComponent), canActivate: [authGuard, roleGuard], data: { roles: ['ADMIN', 'TEACHER'] } },
+  { path: 'audit', loadComponent: () => import('./modules/audit/audit.component').then(m => m.AuditComponent), canActivate: [authGuard, roleGuard], data: { roles: ['ADMIN'] } },
+  { path: 'analytics', loadComponent: () => import('./modules/analytics/analytics.component').then(m => m.AnalyticsComponent), canActivate: [authGuard, roleGuard], data: { roles: ['ADMIN'] } },
 ];

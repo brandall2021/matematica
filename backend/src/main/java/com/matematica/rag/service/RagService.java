@@ -1,5 +1,6 @@
 package com.matematica.rag.service;
 
+import com.matematica.rag.WebSearchService;
 import com.matematica.rag.dto.RagQueryRequest;
 import com.matematica.rag.dto.RagQueryResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class RagService {
 
     private final VectorStore vectorStore;
     private final ChatModel chatModel;
+    private final WebSearchService webSearchService;
 
     @Value("${app.rag.top-k:10}")
     private int topK;
@@ -44,6 +46,11 @@ public class RagService {
         8. Adáptate al nivel del alumno.
         """;
 
+    private static final String WEB_SEARCH_PROMPT_ADDON = """
+        
+        NOTA: También se proporcionaron resultados de búsqueda web. Si el contexto local no es suficiente, usa la información web como complemento. Indica claramente cuando cites una fuente web.
+        """;
+
     public RagQueryResponse query(RagQueryRequest request) {
         try {
             SearchRequest searchRequest = SearchRequest.query(request.query())
@@ -61,7 +68,29 @@ public class RagService {
                     .distinct()
                     .collect(Collectors.joining("\n"));
 
-            var systemMsg = new SystemMessage(SYSTEM_PROMPT + "\n\nContexto:\n" + context);
+            String webContext = "";
+            String webSources = "";
+
+            if (request.webSearchEnabled() && results.size() < 3) {
+                log.info("Low RAG results ({}), falling back to web search for: {}",
+                        results.size(), request.query());
+                var webResults = webSearchService.search(request.query());
+                if (!webResults.isEmpty()) {
+                    webContext = webSearchService.formatWebContext(webResults);
+                    webSources = webSearchService.formatWebSources(webResults);
+                }
+            }
+
+            String fullContext = context;
+            String systemPrompt = SYSTEM_PROMPT;
+            if (!webContext.isEmpty()) {
+                fullContext = context.isEmpty()
+                        ? "Información de la web:\n" + webContext
+                        : context + "\n\n---\n\nInformación de la web:\n" + webContext;
+                systemPrompt += WEB_SEARCH_PROMPT_ADDON;
+            }
+
+            var systemMsg = new SystemMessage(systemPrompt + "\n\nContexto:\n" + fullContext);
             var userMsg = new UserMessage(request.query());
 
             var response = chatModel.call(systemMsg, userMsg);
@@ -69,12 +98,14 @@ public class RagService {
             return new RagQueryResponse(
                     response,
                     sources,
+                    webSources,
                     results.size()
             );
         } catch (Exception e) {
             log.error("Error in RAG query", e);
             return new RagQueryResponse(
                     "Lo siento, ocurrió un error al procesar tu consulta.",
+                    "",
                     "",
                     0
             );

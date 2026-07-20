@@ -8,5 +8,6 @@ public record ChatResponse(
     UUID sessionId,
     String answer,
     String sources,
+    String webSources,
     LocalDateTime timestamp
 ) {}
