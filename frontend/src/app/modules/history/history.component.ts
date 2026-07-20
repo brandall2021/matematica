@@ -1,14 +1,16 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../core/services/api.service';
 
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatListModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatCardModule, MatListModule, MatButtonModule, MatIconModule],
   template: `
     <div class="history-container">
       <mat-card>
@@ -25,7 +27,15 @@ import { ApiService } from '../../core/services/api.service';
             </mat-list-item>
           </mat-list>
           <ng-template #empty>
-            <p class="empty">No hay consultas registradas</p>
+            <div class="empty-state">
+              <mat-icon class="empty-icon">history</mat-icon>
+              <h3>Aún no hay consultas</h3>
+              <p>Empieza una conversación con el tutor para ver tu historial aquí.</p>
+              <button mat-raised-button color="primary" routerLink="/chat">
+                <mat-icon>chat</mat-icon>
+                Abrir Chat
+              </button>
+            </div>
           </ng-template>
         </mat-card-content>
       </mat-card>
@@ -33,10 +43,13 @@ import { ApiService } from '../../core/services/api.service';
   `,
   styles: [`
     .history-container { max-width: 800px; margin: 0 auto; }
-    .empty { text-align: center; color: #666; padding: 2rem; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #666; }
+    .empty-icon { font-size: 64px; width: 64px; height: 64px; color: #bdbdbd; }
+    .empty-state h3 { margin: 1rem 0 0.5rem; color: #424242; }
+    .empty-state p { margin: 0 0 1.5rem; max-width: 360px; margin-left: auto; margin-right: auto; }
 
     @media (max-width: 480px) {
-      .empty { padding: 1rem; }
+      .empty-state { padding: 1.5rem 1rem; }
     }
   `]
 })

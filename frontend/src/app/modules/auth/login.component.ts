@@ -74,7 +74,7 @@ export class LoginComponent {
     this.error = '';
     this.auth.login(this.email, this.password).subscribe({
       next: () => this.router.navigate(['/chat']),
-      error: (err) => { this.error = 'Credenciales invalidas'; this.loading = false; }
+      error: (err) => { this.error = 'El email o la contraseña no son correctos. Verifica e intenta de nuevo.'; this.loading = false; }
     });
   }
 }

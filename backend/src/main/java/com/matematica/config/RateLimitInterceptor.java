@@ -13,15 +13,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RateLimitInterceptor implements HandlerInterceptor {
 
     private final ConcurrentHashMap<String, RateLimitBucket> buckets = new ConcurrentHashMap<>();
-    
+
     private static final int MAX_REQUESTS_PER_MINUTE = 30;
     private static final int MAX_CHAT_REQUESTS_PER_MINUTE = 10;
     private static final long WINDOW_MS = 60_000;
+    private static final int CLEANUP_THRESHOLD = 10_000;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String clientIp = getClientIp(request);
         String path = request.getRequestURI();
+
+        cleanupExpiredBuckets();
         
         int limit = path.contains("/chat/") || path.contains("/rag/") 
             ? MAX_CHAT_REQUESTS_PER_MINUTE 
@@ -48,11 +51,20 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+        String remoteAddr = request.getRemoteAddr();
+        if ("127.0.0.1".equals(remoteAddr) || "0:0:0:0:0:0:0:1".equals(remoteAddr)) {
+            String xff = request.getHeader("X-Forwarded-For");
+            if (xff != null && !xff.isEmpty()) {
+                return xff.split(",")[0].trim();
+            }
         }
-        return request.getRemoteAddr();
+        return remoteAddr;
+    }
+
+    private void cleanupExpiredBuckets() {
+        if (buckets.size() > CLEANUP_THRESHOLD) {
+            buckets.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        }
     }
 
     private static class RateLimitBucket {

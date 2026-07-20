@@ -1,7 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
@@ -14,19 +14,15 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        return auth.refreshToken().pipe(
-          switchMap((res) => {
-            if (res) {
+        return from(auth.refreshTokenAsync()).pipe(
+          switchMap((success) => {
+            if (success) {
+              const token = auth.getToken();
               const cloned = req.clone({
-                setHeaders: { Authorization: `Bearer ${res.token}` }
+                setHeaders: { Authorization: `Bearer ${token}` }
               });
               return next(cloned);
             }
-            auth.logout();
-            return throwError(() => error);
-          }),
-          catchError(() => {
-            auth.logout();
             return throwError(() => error);
           })
         );

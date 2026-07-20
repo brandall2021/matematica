@@ -68,7 +68,12 @@ import { AuthService } from '../../core/services/auth.service';
 
             <mat-tab label="Documentos">
               <div class="tab-content">
-                <div class="table-wrapper">
+                <div *ngIf="documents().length === 0" class="empty-state">
+                  <mat-icon class="empty-icon">folder_open</mat-icon>
+                  <h3>Aún no hay documentos</h3>
+                  <p>Sube tu primer archivo para que el tutor pueda usarlo como referencia.</p>
+                </div>
+                <div class="table-wrapper" *ngIf="documents().length > 0">
                   <table mat-table [dataSource]="documents()" class="full-width">
                     <ng-container matColumnDef="filename">
                       <th mat-header-cell *matHeaderCellDef>Archivo</th>
@@ -111,6 +116,10 @@ import { AuthService } from '../../core/services/auth.service';
     .meta-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     table { width: 100%; }
     .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #666; }
+    .empty-icon { font-size: 64px; width: 64px; height: 64px; color: #bdbdbd; }
+    .empty-state h3 { margin: 1rem 0 0.5rem; color: #424242; }
+    .empty-state p { margin: 0; max-width: 360px; margin-left: auto; margin-right: auto; }
 
     @media (max-width: 768px) {
       .tab-content { padding: 1rem 0; }

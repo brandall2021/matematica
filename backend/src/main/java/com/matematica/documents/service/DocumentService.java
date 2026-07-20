@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
@@ -23,6 +25,7 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentParser documentParser;
     private final IndexerService indexerService;
+    private final VectorStore vectorStore;
 
     @Transactional
     public DocumentUploadResponse uploadDocument(MultipartFile file, String subject, String unit,
@@ -114,6 +117,7 @@ public class DocumentService {
 
     @Transactional
     public void deleteDocument(UUID id) {
+        vectorStore.delete(FilterExpressionBuilder.eq("documentId", id.toString()));
         documentRepository.deleteById(id);
     }
 

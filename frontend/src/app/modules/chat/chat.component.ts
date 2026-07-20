@@ -78,7 +78,18 @@ interface Message {
     .empty-state { text-align: center; padding: 3rem 1rem; color: #666; }
     .empty-icon { font-size: 48px; width: 48px; height: 48px; }
     .examples { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
-    .message { margin-bottom: 1rem; display: flex; }
+    .message {
+      margin-bottom: 1rem;
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 250ms cubic-bezier(0, 0, 0.2, 1), transform 250ms cubic-bezier(0, 0, 0.2, 1);
+
+      @starting-style {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+    }
     .message.user { justify-content: flex-end; }
     .message-content { max-width: 80%; padding: 0.75rem 1rem; border-radius: 12px; word-break: break-word; }
     .user .message-content { background: #e3f2fd; }
@@ -129,7 +140,7 @@ export class ChatComponent implements AfterViewChecked {
           this.loading.set(false);
         },
         error: () => {
-          this.messages.update(m => [...m, { role: 'assistant', content: 'Lo siento, ocurrio un error. Intenta de nuevo.' }]);
+          this.messages.update(m => [...m, { role: 'assistant', content: 'No pude procesar tu pregunta. Intenta reformularla o pregunta algo diferente.' }]);
           this.loading.set(false);
         }
       });

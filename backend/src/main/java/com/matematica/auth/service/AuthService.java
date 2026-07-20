@@ -3,6 +3,7 @@ package com.matematica.auth.service;
 import com.matematica.auth.domain.User;
 import com.matematica.auth.domain.UserRole;
 import com.matematica.auth.dto.*;
+import com.matematica.auth.exception.DuplicateEmailException;
 import com.matematica.auth.repository.UserRepository;
 import com.matematica.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new DuplicateEmailException(request.email());
         }
 
         var user = User.builder()
@@ -49,13 +50,13 @@ public class AuthService {
     }
 
     public AuthResponse refresh(String refreshToken) {
-        String userId = jwtService.extractUserId(refreshToken);
-        var user = userRepository.findById(java.util.UUID.fromString(userId))
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
         if (!jwtService.isTokenValid(refreshToken)) {
             throw new IllegalArgumentException("Invalid refresh token");
         }
+
+        String userId = jwtService.extractUserId(refreshToken);
+        var user = userRepository.findById(java.util.UUID.fromString(userId))
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         return buildAuthResponse(user);
     }

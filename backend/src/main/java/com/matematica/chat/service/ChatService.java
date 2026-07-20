@@ -37,10 +37,7 @@ public class ChatService {
                     .build();
             session = sessionRepository.save(session);
         } else {
-            if (!sessionRepository.existsByIdAndUserId(request.sessionId(), userId)) {
-                throw new IllegalArgumentException("Session not found");
-            }
-            session = sessionRepository.findById(request.sessionId())
+            session = sessionRepository.findByIdAndUserId(request.sessionId(), userId)
                     .orElseThrow(() -> new IllegalArgumentException("Session not found"));
         }
 
@@ -63,8 +60,7 @@ public class ChatService {
                 .build();
         assistantMessage = messageRepository.save(assistantMessage);
 
-        session.setMessageCount(session.getMessageCount() + 2);
-        sessionRepository.save(session);
+        sessionRepository.incrementMessageCount(session.getId(), 2);
 
         return new ChatResponse(
                 assistantMessage.getId(),
@@ -84,9 +80,8 @@ public class ChatService {
     }
 
     public List<ChatMessage> getMessages(UUID sessionId, UUID userId) {
-        if (!sessionRepository.existsByIdAndUserId(sessionId, userId)) {
-            throw new IllegalArgumentException("Session not found");
-        }
+        sessionRepository.findByIdAndUserId(sessionId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
         return messageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
     }
 }

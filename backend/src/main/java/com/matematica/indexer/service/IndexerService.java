@@ -90,12 +90,10 @@ public class IndexerService {
 
                 vectorStore.add(batch);
                 indexed += batch.size();
-                System.gc();
                 log.debug("Indexed batch {}/{} for document {}", indexed, totalChunks, document.getId());
             }
 
             chunks = null;
-            System.gc();
 
             final int totalIndexed = indexed;
             transactionTemplate.executeWithoutResult(status -> {

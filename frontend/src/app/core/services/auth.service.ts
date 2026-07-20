@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, firstValueFrom, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 interface AuthResponse {
@@ -26,6 +26,8 @@ export class AuthService {
   private router = inject(Router);
   private currentUserSignal = signal<User | null>(null);
   private tokenSignal = signal<string | null>(null);
+  private refreshInProgress = false;
+  private pendingRequests: Array<{resolve: (value: boolean) => void}> = [];
 
   currentUser = this.currentUserSignal.asReadonly();
   isLoggedIn = computed(() => this.currentUserSignal() !== null);
@@ -76,20 +78,39 @@ export class AuthService {
       }));
   }
 
-  refreshTokenSync(): boolean {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) return false;
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${environment.apiUrl}/auth/refresh`, false);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.send(JSON.stringify({ refreshToken }));
-    if (xhr.status === 200) {
-      const res = JSON.parse(xhr.responseText) as AuthResponse;
-      this.handleAuth(res);
-      return true;
+  async refreshTokenAsync(): Promise<boolean> {
+    if (this.refreshInProgress) {
+      return new Promise(resolve => {
+        this.pendingRequests.push({resolve});
+      });
     }
-    return false;
+
+    this.refreshInProgress = true;
+    try {
+      const refreshToken = this.refreshTokenValue();
+      if (!refreshToken) {
+        this.logout();
+        return false;
+      }
+      const response = await firstValueFrom(
+        this.http.post<AuthResponse>(`${environment.apiUrl}/auth/refresh`, { refreshToken })
+      );
+      this.handleAuth(response);
+      this.pendingRequests.forEach(p => p.resolve(true));
+      this.pendingRequests = [];
+      return true;
+    } catch {
+      this.logout();
+      this.pendingRequests.forEach(p => p.resolve(false));
+      this.pendingRequests = [];
+      return false;
+    } finally {
+      this.refreshInProgress = false;
+    }
+  }
+
+  private refreshTokenValue(): string | null {
+    return localStorage.getItem('refreshToken');
   }
 
   private handleAuth(res: AuthResponse): void {
@@ -102,12 +123,14 @@ export class AuthService {
     this.currentUserSignal.set({ id: res.userId, email: res.email, name: res.name, role: res.role });
   }
 
-  private loadFromStorage(): void {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    if (token && user) {
-      this.tokenSignal.set(token);
-      this.currentUserSignal.set(JSON.parse(user));
+  private loadFromStorage() {
+    try {
+      const user = localStorage.getItem('user');
+      if (user) {
+        this.currentUserSignal.set(JSON.parse(user));
+      }
+    } catch {
+      localStorage.removeItem('user');
     }
   }
 }

@@ -81,7 +81,7 @@ export class RegisterComponent {
     this.error = '';
     this.auth.register(this.email, this.password, this.name, this.lastName).subscribe({
       next: () => this.router.navigate(['/chat']),
-      error: (err) => { this.error = 'Error al registrarse'; this.loading = false; }
+      error: (err) => { this.error = 'No pudimos crear tu cuenta. Verifica los datos e intenta de nuevo.'; this.loading = false; }
     });
   }
 }

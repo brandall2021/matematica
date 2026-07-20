@@ -48,11 +48,11 @@ export class AdminComponent {
     this.loading.set(true);
     this.api.reindexAll().subscribe({
       next: () => {
-        this.snackBar.open('Reindexacion iniciada correctamente', 'Cerrar', { duration: 3000 });
+        this.snackBar.open('Reindexación iniciada correctamente. Esto puede tomar unos minutos.', 'Cerrar', { duration: 4000 });
         this.loading.set(false);
       },
       error: (err) => {
-        this.snackBar.open('Error al reindexar: ' + err.message, 'Cerrar', { duration: 5000 });
+        this.snackBar.open('Error al reindexar. Intenta de nuevo.', 'Cerrar', { duration: 5000 });
         this.loading.set(false);
       }
     });
