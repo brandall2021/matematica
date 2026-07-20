@@ -180,17 +180,21 @@ El docente puede configurar:
 ## Seguridad
 
 - Autenticacion mediante **JWT** con refresh tokens
-- **Roles y permisos** granulares
+- **Roles y permisos** granulares (`ADMIN`, `TEACHER`, `ASSISTANT`, `STUDENT`)
+- **Role-based route guard** en frontend (proteccion por URL directa)
 - **BCrypt** para hash de contrasenas
 - **Rate Limiting**: 30 req/min general, 10 req/min chat/RAG
+- **Anti-spoofing**: X-Forwarded-For solo confiable desde proxy conocido
 - **XSS Protection**: Sanitizacion con DOMPurify en el frontend
 - **IDOR Protection**: Validacion de pertenencia de sesiones en el backend
-- **Code Injection Protection**: Validacion regex en el motor matematico
+- **Code Injection Protection**: Validacion en el motor matematico
 - **CORS** configurable por variable de entorno
 - **Auditoria** de eventos del sistema
 - **Validacion** de entrada en todos los endpoints
 - **Manejo centralizado** de errores con Problem Detail
-- **JWT Secret validation** en perfil prod (rechaza secrets por defecto)
+- **Secrets requeridos**: JWT_SECRET y DB_PASSWORD son obligatorios (fail-fast si no estan configurados)
+- **Token validation**: Refresh token validado antes de extraer claims
+- **Null claim handling**: Tokens sin role claim son rechazados
 
 ---
 
@@ -202,9 +206,9 @@ El docente puede configurar:
 |----------|-------------|---------|
 | `DB_URL` | URL JDBC de PostgreSQL | `jdbc:postgresql://localhost:5432/matematica` |
 | `DB_USERNAME` | Usuario de BD | `matematica` |
-| `DB_PASSWORD` | Contrasena de BD | `matematica` |
-| `JWT_SECRET` | Secreto para firmar JWT (base64, min 32 bytes) | *(requerido en prod)* |
-| `OPENAI_API_KEY` | API key de OpenAI | *(requerido)* |
+| `DB_PASSWORD` | Contrasena de BD | **(requerido)** |
+| `JWT_SECRET` | Secreto para firmar JWT (base64, min 32 bytes) | **(requerido)** |
+| `OPENAI_API_KEY` | API key de OpenAI | **(requerido)** |
 | `EMBEDDING_TYPE` | Proveedor de embeddings: `openai`, `ollama` | `openai` |
 | `OLLAMA_URL` | URL de Ollama | `http://ollama:11434` |
 | `QDRANT_HOST` | Host de Qdrant | `localhost` |
@@ -369,6 +373,41 @@ En Dokploy → tu servicio → **Domains**:
 
 ---
 
+## Design System
+
+El proyecto utiliza un **dark chalkboard theme** con identidad matematica:
+
+### Tokens (`frontend/src/styles/_tokens.scss`)
+```scss
+:root {
+  // Colores - Dark chalkboard
+  --color-bg-primary: #1a1a2e;
+  --color-bg-surface: #16213e;
+  --color-accent: #e2b714;  // Amarillo tiza
+  
+  // Tipografia
+  --font-display: 'Newsreader', serif;  // Display face
+  --font-body: 'Inter', sans-serif;     // Body text
+  
+  // Spacing (8px grid)
+  --space-1: 0.25rem;
+  --space-4: 1rem;
+  
+  // Easing
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+```
+
+### Caracteristicas
+- **Tactile feedback**: Botones con `scale(0.97)` en `:active`
+- **Reduced motion**: Respeto a `prefers-reduced-motion`
+- **Touch-safe hover**: Hover states con `@media (hover: hover)`
+- **Stagger animations**: Listas con cascada de 50ms
+- **Counter animation**: Dashboard con numeros animados
+- **Slide-in messages**: Mensajes de chat con transicion
+
+---
+
 ## Estructura del Proyecto
 
 ```
@@ -376,6 +415,7 @@ matematica/
 +-- backend/
 |   +-- src/main/java/com/matematica/
 |   |   +-- auth/          # Autenticacion (JWT, registro, login)
+|   |   +-- auth/exception/ # Excepciones tipadas (DuplicateEmail)
 |   |   +-- chat/          # Chat con sesiones y mensajes
 |   |   +-- config/        # Rate limiting, validacion prod, excepciones
 |   |   +-- documents/     # Gestion documental (upload, parser)
@@ -394,15 +434,22 @@ matematica/
 +-- frontend/
 |   +-- src/app/
 |   |   +-- core/          # Guards, interceptors, services
+|   |   |   +-- guards/    # authGuard, roleGuard
+|   |   |   +-- services/  # ApiService (typed), AuthService
+|   |   |   +-- interceptors/ # auth, error (async refresh)
 |   |   +-- modules/
 |   |   |   +-- auth/      # Login, Register
 |   |   |   +-- chat/      # Chat con tutor (KaTeX, sesiones, DOMPurify)
-|   |   |   +-- math/      # Motor matematico (21 ops, SVG plots)
+|   |   |   +-- math/      # Motor matematico (descompuesto en sub-componentes)
+|   |   |   |   +-- components/ # operation-selector, plot-renderer, math-result
 |   |   |   +-- documents/ # Gestion documental
 |   |   |   +-- history/   # Historial de consultas
-|   |   |   +-- dashboard/ # Dashboard admin
+|   |   |   +-- dashboard/ # Dashboard admin (con counter animation)
 |   |   |   +-- admin/     # Panel administracion
 |   |   |   +-- settings/  # Configuracion
+|   |   +-- core/services/ # ApiService (typed), AuthService (async refresh)
+|   +-- src/styles/
+|   |   +-- _tokens.scss   # Design tokens (dark chalkboard theme)
 |   +-- angular.json
 |   +-- package.json
 |   +-- Dockerfile
@@ -416,6 +463,7 @@ matematica/
 
 ## Calidad del Codigo
 
+### Backend
 - Arquitectura por capas (Controller -> Service -> Repository)
 - Inyeccion de dependencias
 - DTOs para desacoplar API de persistencia
@@ -424,12 +472,69 @@ matematica/
 - Manejo centralizado de excepciones
 - Documentacion OpenAPI/Swagger
 - Migraciones de base de datos con Flyway
+- Rate limiting configurable
+- Atomic operations (message counter via @Modifying query)
+- Single-query lookups (eliminados double DB reads)
+- Vector store cleanup en document deletion
+
+### Frontend
 - Angular signals para estado reactivo
 - Componentes standalone (sin NgModule)
 - Lazy loading de rutas
-- Interceptors HTTP para auth y errores
+- Interceptors HTTP para auth y errores (async refresh queue)
 - Sanitizacion XSS con DOMPurify
-- Rate limiting configurable
+- TypeScript estricto con interfaces tipadas (sin `any`)
+- Role-based route guard
+- Design system con tokens (colores, tipografia, espaciado)
+- Dark chalkboard theme con identidad matematica
+- Tactile feedback en botones (scale 0.97 on press)
+- prefers-reduced-motion para accesibilidad
+- Hover states con media query (touch-safe)
+- Animaciones: stagger lists, counter animation, slide-in messages
+- Empty states orientadores con CTAs
+- Error messages humanos y descriptivos
+
+### Testing
+- Backend: 7 tests de auth con @WebMvcTest (MockMvc)
+- Frontend: Smoke tests para app y auth service
+
+---
+
+## Changelog Reciente
+
+### v2.0 - Mejoras Integral (Julio 2026)
+
+**Seguridad:**
+- Secrets obligatorios (JWT_SECRET, DB_PASSWORD) - fail-fast si no estan configurados
+- Anti-spoofing en rate limiter (X-Forwarded-For solo desde proxy conocido)
+- Validacion de refresh token antes de extraer claims
+- Rechazo de tokens sin role claim
+- Role-based route guard en frontend
+
+**Arquitecture:**
+- MathComponent descompuesto en 4 sub-componentes (593 -> 338 lineas)
+- ApiService tipado (eliminados todos los `any`)
+- Async refresh queue (reemplaza XMLHttpRequest sincrono)
+- Atomic message counter via @Modifying query
+- Vector store cleanup en document deletion
+
+**Design System:**
+- Dark chalkboard theme con identidad matematica
+- Design tokens (colores, tipografia, espaciado, easing)
+- Tactile feedback en botones (scale 0.97)
+- prefers-reduced-motion para accesibilidad
+- Hover states touch-safe con media query
+
+**UX:**
+- Error messages humanos y descriptivos
+- Empty states orientadores con CTAs
+- Stagger animations en listas
+- Counter animation en dashboard
+- Slide-in messages en chat
+
+**Testing:**
+- Backend: 7 tests de auth con @WebMvcTest
+- Frontend: Smoke tests para app y auth service
 
 ---
 
